@@ -1,5 +1,134 @@
-/target
-.vscode/launch.json
-.vscode/settings.json
-.vscode
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.pdb
+
+# Cargo
+Cargo.lock
+Cargo.toml.bak
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+log/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Configuration files with sensitive data
+Conf.local.toml
+Conf.production.toml
+Conf.staging.toml
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Documentation build
+/docs/
+/doc/
+
+# Test artifacts
+/coverage/
+*.profraw
+
+# Profiling data
+*.prof
+
+# Benchmarking
+/benches/target/
+
+# Docker
+.dockerignore
+Dockerfile.local
+
+# Kubernetes
+*.yaml.bak
+*.yml.bak
+
+# CI/CD
+.github/workflows/*.log
+.gitlab-ci.yml.bak
+
+# Security
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+cache/
+
+# Node.js (if any frontend tools are used)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (if any scripts are used)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Windows
+*.lnk
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# Project specific
+test_project/

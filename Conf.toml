@@ -1,6 +1,54 @@
-rpc_url = "RPC_URL:PORT"
-rpc_user = "RPC_USER"
-rpc_password = "RPC_PASSWORD"
+# Verus RPC Server Configuration
+# Replace these values with your actual Verus daemon settings
 
-server_port = SERVER_PORT
-server_addr = "ADDRESS_TO_BIND_TO"
+[verus]
+# The URL and port of your Verus daemon RPC endpoint
+rpc_url = "http://127.0.0.1:27486"
+# RPC username (from your verus.conf file)
+rpc_user = "your_rpc_username"
+# RPC password (from your verus.conf file)
+rpc_password = "your_rpc_password"
+# Connection timeout in seconds
+timeout_seconds = 30
+# Maximum retry attempts
+max_retries = 3
+
+[server]
+# Server address to bind to
+bind_address = "127.0.0.1"
+# Server port
+port = 8080
+# Maximum request size in bytes
+max_request_size = 1048576
+# Worker threads (0 for auto-detect)
+worker_threads = 0
+
+[security]
+# Allowed CORS origins
+cors_origins = ["*"]
+# Allowed CORS methods
+cors_methods = ["GET", "POST", "OPTIONS"]
+# Allowed CORS headers
+cors_headers = ["Content-Type", "Authorization", "Accept"]
+# Enable request logging
+enable_request_logging = true
+# Enable security headers
+enable_security_headers = true
+# Trusted proxy headers
+trusted_proxy_headers = ["X-Forwarded-For"]
+
+[rate_limit]
+# Requests per minute per IP
+requests_per_minute = 1000
+# Burst size
+burst_size = 100
+# Enable rate limiting
+enabled = true
+
+[logging]
+# Log level (trace, debug, info, warn, error)
+level = "info"
+# Log format (json, text)
+format = "json"
+# Enable structured logging
+structured = true

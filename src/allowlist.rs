@@ -121,3 +121,37 @@ pub fn is_method_allowed(method: &str, params: &[Box<RawValue>]) -> bool {
         _ => false,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_getinfo_allowed() {
+        let params: Vec<Box<RawValue>> = vec![];
+        assert!(is_method_allowed("getinfo", &params));
+    }
+
+    #[test]
+    fn test_getblock_allowed() {
+        let params: Vec<Box<RawValue>> = vec![
+            RawValue::from_string("\"0000000000000000000000000000000000000000000000000000000000000000\"".to_string()).unwrap(),
+            RawValue::from_string("true".to_string()).unwrap(),
+        ];
+        assert!(is_method_allowed("getblock", &params));
+    }
+
+    #[test]
+    fn test_invalid_method_not_allowed() {
+        let params: Vec<Box<RawValue>> = vec![];
+        assert!(!is_method_allowed("invalid_method", &params));
+    }
+
+    #[test]
+    fn test_getblock_wrong_params() {
+        let params: Vec<Box<RawValue>> = vec![
+            RawValue::from_string("123".to_string()).unwrap(),
+        ];
+        assert!(!is_method_allowed("getblock", &params));
+    }
+}
