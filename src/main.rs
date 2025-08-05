@@ -1,4 +1,4 @@
-use rust_verusd_rpc_server::{AppConfig, VerusRpcServer};
+use verus_t_rpc::{AppConfig, VerusRpcServer};
 use tracing::{error, info};
 
 #[tokio::main]
