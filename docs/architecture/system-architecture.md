@@ -1,6 +1,6 @@
 # System Architecture
 
-This document provides a comprehensive overview of the Verus RPC Server's system architecture, design principles, and component interactions.
+Overview of the Verus RPC Server's system architecture, design principles, and component interactions.
 
 ## 🏗️ Architecture Overview
 

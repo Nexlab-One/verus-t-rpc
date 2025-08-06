@@ -1,40 +1,61 @@
-# Verus RPC Server Public DEX Configuration
-# This configuration is optimized for public DEX usage with appropriate rate limiting
+# Verus RPC Server Mining Pool Integration Configuration
+# This configuration enables mining pool integration for enhanced PoW validation
 
 [verus]
+# The URL and port of your Verus daemon RPC endpoint
 rpc_url = "http://127.0.0.1:27486"
+# RPC username (from your verus.conf file)
 rpc_user = "your_rpc_username"
+# RPC password (from your verus.conf file)
 rpc_password = "your_rpc_password"
+# Connection timeout in seconds
 timeout_seconds = 30
+# Maximum retry attempts
 max_retries = 3
 
 [server]
-bind_address = "0.0.0.0"
+# Server address to bind to
+bind_address = "127.0.0.1"
+# Server port
 port = 8080
+# Maximum request size in bytes
 max_request_size = 1048576
+# Worker threads (0 for auto-detect)
 worker_threads = 0
-ssl_enabled = false
-compression_enabled = true
-compression_min_size = 1024
 
 [security]
-# Allow all origins for DEX integration
+# Allowed CORS origins (use "*" for development, specific domains for production)
 cors_origins = ["*"]
+# Allowed CORS methods
 cors_methods = ["GET", "POST", "OPTIONS"]
-cors_headers = ["Content-Type", "Authorization", "Accept"]
+# Allowed CORS headers
+cors_headers = ["Content-Type", "Authorization"]
+# Enable request logging
 enable_request_logging = true
+# Enable security headers
 enable_security_headers = true
+# Trusted proxy headers
 trusted_proxy_headers = ["X-Forwarded-For", "X-Real-IP"]
+# Enable custom security headers
 enable_custom_headers = true
+# Custom security header value
 custom_security_header = "X-Verus-RPC-Server"
-method_rate_limits = {}
-development_mode = false
+
+# Method-specific rate limits
+[security.method_rate_limits]
+getinfo = { requests_per_minute = 1000, burst_size = 100, enabled = true }
+getblock = { requests_per_minute = 500, burst_size = 50, enabled = true }
+getrawtransaction = { requests_per_minute = 300, burst_size = 30, enabled = true }
 
 [security.jwt]
+# JWT secret key (generate a secure random key for production)
 secret_key = "your-super-secret-jwt-key-that-is-at-least-32-characters-long"
-expiration_seconds = 3600  # 1 hour for DEX users
+# JWT token expiration time in seconds
+expiration_seconds = 3600
+# JWT issuer
 issuer = "verus-rpc-server"
-audience = "verus-dex-clients"
+# JWT audience
+audience = "verus-clients"
 
 # PoW Configuration (Proof of Work for token issuance)
 [security.pow]
@@ -52,7 +73,7 @@ rate_limit_multiplier = 2.0
 # Enable PoW challenges
 enabled = true
 
-# Mining Pool Configuration (optional - for enhanced PoW validation)
+# Mining Pool Configuration
 [security.mining_pool]
 # Pool server URL (replace with your actual pool URL)
 pool_url = "https://pool.example.com"
@@ -72,43 +93,33 @@ circuit_breaker_timeout = 60
 # Rate limiting requests per minute per miner
 requests_per_minute = 100
 # Enable pool integration
-enabled = false
-
-# Token issuance rate limiting
-[security.token_issuance]
-requests_per_hour = 10  # Limit token requests per IP
 enabled = true
+
+# Development mode - allows local access without authentication
+development_mode = false
 
 [rate_limit]
-# General RPC rate limiting
+# Requests per minute per IP
 requests_per_minute = 1000
+# Burst size
 burst_size = 100
+# Enable rate limiting
 enabled = true
-
-# Method-specific rate limits for DEX usage
-[rate_limit.methods]
-getinfo = 1000
-z_getbalance = 500
-z_getnewaddress = 100
-z_sendmany = 50
-getblock = 200
 
 [logging]
+# Log level (debug, info, warn, error)
 level = "info"
-structured_logging = true
-format = "json"
+# Log format (json, text)
+format = "text"
+# Enable structured logging
+structured = false
 
 [cache]
+# Enable caching
 enabled = true
+# Redis connection URL
 redis_url = "redis://127.0.0.1:6379"
+# Default TTL in seconds
 default_ttl = 300
-max_size = 104857600
-
-# Token service configuration
-[token_service]
-port = 8081
-bind_address = "127.0.0.1"  # Internal only
-enable_cors = true
-allowed_origins = ["*"]
-rate_limit_requests_per_minute = 100
-enable_request_logging = true
+# Maximum cache size in bytes
+max_size = 104857600  # 100MB

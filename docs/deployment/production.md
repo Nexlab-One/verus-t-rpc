@@ -1,6 +1,6 @@
 # Production Deployment
 
-This guide provides comprehensive instructions for deploying the Verus RPC Server in production environments with security, performance, and reliability considerations.
+Instructions for deploying the Verus RPC Server in production environments.
 
 ## 🚀 Production Architecture
 

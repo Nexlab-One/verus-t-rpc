@@ -1,6 +1,6 @@
 # Security Overview
 
-This document provides a comprehensive overview of the security features, architecture, and best practices implemented in the Verus RPC Server.
+Overview of the security features, architecture, and best practices implemented in the Verus RPC Server.
 
 ## 🛡️ Security Architecture
 
@@ -10,21 +10,21 @@ The Verus RPC Server implements a **multi-layered security approach** following 
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Security Layers                              │
 ├─────────────────────────────────────────────────────────────────┤
-│ 1. Network Security (Reverse Proxy)                            │
-│    • SSL/TLS Termination                                       │
-│    • DDoS Protection                                           │
-│    • IP Whitelisting                                           │
+│ 1. Network Security (Reverse Proxy)                             │
+│    • SSL/TLS Termination                                        │
+│    • DDoS Protection                                            │
+│    • IP Whitelisting                                            │
 ├─────────────────────────────────────────────────────────────────┤
-│ 2. Application Security (RPC Server)                           │
-│    • Authentication & Authorization                            │
-│    • Rate Limiting                                             │
-│    • Input Validation                                          │
-│    • Security Headers                                          │
+│ 2. Application Security (RPC Server)                            │
+│    • Authentication & Authorization                             │
+│    • Rate Limiting                                              │
+│    • Input Validation                                           │
+│    • Security Headers                                           │
 ├─────────────────────────────────────────────────────────────────┤
-│ 3. Infrastructure Security                                     │
-│    • Method Allowlist                                          │
-│    • Parameter Validation                                      │
-│    • Error Handling                                            │
+│ 3. Infrastructure Security                                      │
+│    • Method Allowlist                                           │
+│    • Parameter Validation                                       │
+│    • Error Handling                                             │
 └─────────────────────────────────────────────────────────────────┘
 ```
 

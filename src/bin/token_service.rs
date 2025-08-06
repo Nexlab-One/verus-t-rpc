@@ -113,6 +113,14 @@ impl TokenService {
             .and(with_app_config(app_config.clone()))
             .and_then(handle_issue_token);
 
+        // PoW challenge generation endpoint
+        let pow_challenge_route = warp::path("pow")
+            .and(warp::path("challenge"))
+            .and(warp::post())
+            .and(with_token_issuer(token_issuer.clone()))
+            .and(with_app_config(app_config.clone()))
+            .and_then(handle_pow_challenge);
+
         // Validate token endpoint
         let validate_token_route = warp::path("validate")
             .and(warp::post())
@@ -122,17 +130,10 @@ impl TokenService {
             .and_then(handle_validate_token);
 
         // Combine routes
-        let routes = health_route
+        health_route
             .or(issue_token_route)
-            .or(validate_token_route);
-
-        // Apply CORS
-        let cors = warp::cors()
-            .allow_any_origin()
-            .allow_methods(vec!["GET", "POST", "OPTIONS"])
-            .allow_headers(vec!["Content-Type", "Authorization"]);
-        
-        routes.with(cors)
+            .or(pow_challenge_route)
+            .or(validate_token_route)
     }
 }
 
@@ -155,6 +156,40 @@ async fn handle_issue_token(
             error!("Token issuance failed: {}", e);
             let error_response = serde_json::json!({
                 "error": "token_issuance_failed",
+                "message": e.to_string(),
+                "timestamp": chrono::Utc::now().to_rfc3339()
+            });
+            
+            Ok(warp::reply::with_status(
+                warp::reply::json(&error_response),
+                warp::http::StatusCode::BAD_REQUEST,
+            ))
+        }
+    }
+}
+
+/// Handle PoW challenge generation request
+async fn handle_pow_challenge(
+    token_issuer: Arc<TokenIssuerAdapter>,
+    _app_config: Arc<AppConfig>,
+) -> Result<impl Reply, warp::reject::Rejection> {
+    info!("Processing PoW challenge generation request");
+
+    // For now, use a default client IP
+    // In production, this would be extracted from the request
+    let client_ip = "127.0.0.1";
+
+    match token_issuer.generate_pow_challenge(client_ip).await {
+        Ok(challenge) => {
+            Ok(warp::reply::with_status(
+                warp::reply::json(&challenge),
+                warp::http::StatusCode::OK,
+            ))
+        }
+        Err(e) => {
+            error!("PoW challenge generation failed: {}", e);
+            let error_response = serde_json::json!({
+                "error": "pow_challenge_generation_failed",
                 "message": e.to_string(),
                 "timestamp": chrono::Utc::now().to_rfc3339()
             });

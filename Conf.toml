@@ -61,6 +61,43 @@ issuer = "verus-rpc-server"
 # JWT audience
 audience = "verus-clients"
 
+# PoW Configuration (Proof of Work for token issuance)
+[security.pow]
+# Default difficulty for PoW challenges (hex string)
+# Easy: "ffffffff" (for testing)
+# Medium: "0000ffff" (default production)
+# Hard: "000000ff" (premium access)
+default_difficulty = "0000ffff"
+# Challenge expiration time in minutes
+challenge_expiration_minutes = 10
+# Token duration for PoW-validated tokens (seconds)
+token_duration_seconds = 14400  # 4 hours
+# Rate limit multiplier for PoW-validated tokens
+rate_limit_multiplier = 2.0
+# Enable PoW challenges
+enabled = true
+
+# Mining Pool Configuration (optional - for enhanced PoW validation)
+[security.mining_pool]
+# Pool server URL
+pool_url = "https://pool.example.com"
+# Pool API key for authentication
+api_key = "your-pool-api-key"
+# Pool public key for signature verification (32-byte hex string)
+public_key = "0000000000000000000000000000000000000000000000000000000000000000"
+# Connection timeout in seconds
+timeout_seconds = 30
+# Maximum retry attempts
+max_retries = 3
+# Circuit breaker threshold (number of failures before opening)
+circuit_breaker_threshold = 5
+# Circuit breaker timeout in seconds
+circuit_breaker_timeout = 60
+# Rate limiting requests per minute
+requests_per_minute = 100
+# Enable pool integration
+enabled = false
+
 [rate_limit]
 # Requests per minute per IP
 requests_per_minute = 1000

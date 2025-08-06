@@ -49,6 +49,96 @@ pub struct ServerConfig {
     pub worker_threads: usize,
 }
 
+/// PoW configuration
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct PowConfig {
+    /// Default difficulty for PoW challenges
+    #[validate(length(min = 1))]
+    pub default_difficulty: String,
+    
+    /// Challenge expiration time in minutes
+    #[validate(range(min = 1, max = 60))]
+    pub challenge_expiration_minutes: u32,
+    
+    /// Token duration for PoW-validated tokens (seconds)
+    #[validate(range(min = 3600, max = 86400))] // 1 hour to 24 hours
+    pub token_duration_seconds: u64,
+    
+    /// Rate limit multiplier for PoW-validated tokens
+    #[validate(range(min = 1.0, max = 10.0))]
+    pub rate_limit_multiplier: f64,
+    
+    /// Enable PoW challenges
+    pub enabled: bool,
+}
+
+/// Mining Pool configuration
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct MiningPoolConfig {
+    /// Pool server URL
+    #[validate(url)]
+    pub pool_url: String,
+    
+    /// Pool API key for authentication
+    #[validate(length(min = 1))]
+    pub api_key: String,
+    
+    /// Pool public key for signature verification
+    #[validate(length(min = 1))]
+    pub public_key: String,
+    
+    /// Connection timeout in seconds
+    #[validate(range(min = 1, max = 300))]
+    pub timeout_seconds: u64,
+    
+    /// Maximum retry attempts
+    #[validate(range(min = 0, max = 10))]
+    pub max_retries: u32,
+    
+    /// Circuit breaker threshold (number of failures before opening)
+    #[validate(range(min = 1, max = 100))]
+    pub circuit_breaker_threshold: u32,
+    
+    /// Circuit breaker timeout in seconds
+    #[validate(range(min = 1, max = 3600))]
+    pub circuit_breaker_timeout: u64,
+    
+    /// Rate limiting requests per minute
+    #[validate(range(min = 1, max = 10000))]
+    pub requests_per_minute: u32,
+    
+    /// Enable pool integration
+    pub enabled: bool,
+}
+
+impl Default for MiningPoolConfig {
+    fn default() -> Self {
+        Self {
+            pool_url: "https://pool.example.com".to_string(),
+            api_key: "your-pool-api-key".to_string(),
+            public_key: "pool-public-key".to_string(),
+            timeout_seconds: 30,
+            max_retries: 3,
+            circuit_breaker_threshold: 5,
+            circuit_breaker_timeout: 60,
+            requests_per_minute: 100,
+            enabled: false,
+        }
+    }
+}
+
+impl Default for PowConfig {
+    fn default() -> Self {
+        Self {
+            default_difficulty: "0000ffff".to_string(),
+            challenge_expiration_minutes: 10,
+            token_duration_seconds: 14400, // 4 hours
+            rate_limit_multiplier: 2.0,
+            enabled: true,
+        }
+    }
+}
+
 /// Security configuration
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct SecurityConfig {
@@ -81,6 +171,12 @@ pub struct SecurityConfig {
     
     /// JWT configuration
     pub jwt: JwtConfig,
+    
+    /// PoW configuration
+    pub pow: Option<PowConfig>,
+    
+    /// Mining Pool configuration
+    pub mining_pool: Option<MiningPoolConfig>,
     
     /// Development mode - allows local access without authentication
     pub development_mode: bool,
@@ -213,6 +309,8 @@ impl Default for AppConfig {
                     issuer: "verus-rpc-server".to_string(),
                     audience: "verus-clients".to_string(),
                 },
+                pow: None,
+                mining_pool: None,
                 development_mode: false,
             },
             rate_limit: RateLimitConfig {

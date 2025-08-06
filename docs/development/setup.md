@@ -1,6 +1,6 @@
 # Development Setup
 
-This guide provides comprehensive instructions for setting up a development environment for the Verus RPC Server project.
+Instructions for setting up a development environment for the Verus RPC Server project.
 
 ## 🛠️ Prerequisites
 

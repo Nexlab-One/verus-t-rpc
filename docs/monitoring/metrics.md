@@ -1,10 +1,10 @@
 # Metrics & Monitoring
 
-This document provides comprehensive information about the monitoring and observability features of the Verus RPC Server.
+Information about the monitoring and observability features of the Verus RPC Server.
 
 ## 📊 Monitoring Overview
 
-The Verus RPC Server provides comprehensive monitoring capabilities through:
+The Verus RPC Server provides monitoring capabilities through:
 
 - **Prometheus Metrics**: Detailed performance and business metrics
 - **Health Checks**: Service health monitoring

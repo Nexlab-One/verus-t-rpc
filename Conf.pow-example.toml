@@ -1,5 +1,5 @@
-# Verus RPC Server Public DEX Configuration
-# This configuration is optimized for public DEX usage with appropriate rate limiting
+# Verus RPC Server PoW-Enabled Configuration Example
+# This configuration enables Proof of Work as a payment mechanism
 
 [verus]
 rpc_url = "http://127.0.0.1:27486"
@@ -32,23 +32,27 @@ development_mode = false
 
 [security.jwt]
 secret_key = "your-super-secret-jwt-key-that-is-at-least-32-characters-long"
-expiration_seconds = 3600  # 1 hour for DEX users
+expiration_seconds = 3600  # 1 hour for anonymous users
 issuer = "verus-rpc-server"
 audience = "verus-dex-clients"
 
-# PoW Configuration (Proof of Work for token issuance)
+# PoW Configuration
 [security.pow]
 # Default difficulty for PoW challenges (hex string)
 # Easy: "ffffffff" (for testing)
 # Medium: "0000ffff" (default production)
 # Hard: "000000ff" (premium access)
 default_difficulty = "0000ffff"
+
 # Challenge expiration time in minutes
 challenge_expiration_minutes = 10
+
 # Token duration for PoW-validated tokens (seconds)
 token_duration_seconds = 14400  # 4 hours
+
 # Rate limit multiplier for PoW-validated tokens
 rate_limit_multiplier = 2.0
+
 # Enable PoW challenges
 enabled = true
 
@@ -73,11 +77,6 @@ circuit_breaker_timeout = 60
 requests_per_minute = 100
 # Enable pool integration
 enabled = false
-
-# Token issuance rate limiting
-[security.token_issuance]
-requests_per_hour = 10  # Limit token requests per IP
-enabled = true
 
 [rate_limit]
 # General RPC rate limiting

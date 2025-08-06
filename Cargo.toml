@@ -10,14 +10,15 @@ tokio = { version = "1.47.1", features = ["full"] }
 
 # JSON and serialization
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.142"
+serde_json = { version = "1.0.142", features = ["raw_value"] }
 jsonrpc = "0.18.0"
 
 # HTTP client
-reqwest = { version = "0.12.22", features = ["json"] }
+reqwest = { version = "0.12.22", features = ["json", "rustls-tls"] }
 
 # Configuration
 config = "0.15.13"
+toml = "0.9.5"
 
 # Validation
 validator = { version = "0.20.0", features = ["derive"] }
@@ -43,6 +44,7 @@ chrono = { version = "0.4.41", features = ["serde"] }
 # Async utilities
 futures = "0.3.31"
 bytes = "1.10.1"
+async-trait = "0.1.88"
 
 # Compression
 flate2 = "1.1.2"
@@ -55,6 +57,10 @@ rand = "0.9.2"
 getrandom = { version = "0.3.3", features = ["std"] }
 jsonwebtoken = "9.3.1"
 uuid = { version = "1.17.0", features = ["v4"] }
+sha2 = "0.10.9"
+blake3 = "1.8.2"
+hex = "0.4.3"
+ed25519-dalek = "2.2.0"
 
 [[bin]]
 name = "token-service"

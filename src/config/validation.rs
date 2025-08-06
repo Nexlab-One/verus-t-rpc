@@ -89,6 +89,7 @@ impl ConfigValidator {
 mod tests {
     use super::*;
     use crate::config::app_config::{SecurityConfig, RateLimitConfig};
+    use std::collections::HashMap;
 
     #[test]
     fn test_validate_verus_url_valid_http() {
@@ -119,21 +120,23 @@ mod tests {
     #[test]
     fn test_validate_security_config_valid() {
         let security = SecurityConfig {
-            cors_origins: vec![],
+            cors_origins: vec!["https://example.com".to_string()],
             cors_methods: vec!["GET".to_string(), "POST".to_string()],
-            cors_headers: vec![],
-            enable_request_logging: false,
-            enable_security_headers: false,
-            trusted_proxy_headers: vec![],
-            enable_custom_headers: false,
-            custom_security_header: None,
-            method_rate_limits: std::collections::HashMap::new(),
+            cors_headers: vec!["Content-Type".to_string()],
+            enable_request_logging: true,
+            enable_security_headers: true,
+            trusted_proxy_headers: vec!["X-Forwarded-For".to_string()],
+            enable_custom_headers: true,
+            custom_security_header: Some("X-Custom-Header".to_string()),
+            method_rate_limits: HashMap::new(),
             jwt: crate::config::app_config::JwtConfig {
-                secret_key: "test_secret_key_32_chars_long".to_string(),
+                secret_key: "your-super-secret-jwt-key-that-is-at-least-32-characters-long".to_string(),
                 expiration_seconds: 3600,
-                issuer: "test".to_string(),
-                audience: "test".to_string(),
+                issuer: "verus-rpc-server".to_string(),
+                audience: "verus-clients".to_string(),
             },
+            pow: None,
+            mining_pool: None,
             development_mode: false,
         };
         
@@ -159,6 +162,8 @@ mod tests {
                 issuer: "test".to_string(),
                 audience: "test".to_string(),
             },
+            pow: None,
+            mining_pool: None,
             development_mode: false,
         };
         

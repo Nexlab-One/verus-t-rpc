@@ -351,4 +351,4 @@ enabled = true
 - Suspicious activity detection
 - Automatic blocking of abusive IPs
 
-This anonymous approach provides a secure, scalable, and user-friendly way for DEX applications to access Verus RPC services without requiring any user registration or personal information.
+

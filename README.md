@@ -213,21 +213,20 @@ MIT License - see [LICENSE](LICENSE) file for details.
 For comprehensive documentation, see the [docs/](docs/) directory:
 
 - **[Getting Started](docs/getting-started.md)** - Quick start guide
-- **[API Reference](docs/api/)** - Complete API documentation
-- **[Architecture](docs/architecture/)** - System design and architecture
-- **[Security](docs/security/)** - Security features and best practices
-- **[Deployment](docs/deployment/)** - Production deployment guides
-- **[Development](docs/development/)** - Development setup and guidelines
-- **[Monitoring](docs/monitoring/)** - Monitoring and observability
-- **[Secure Deployment Summary](docs/SECURE_DEPLOYMENT_SUMMARY.md)** - Complete implementation summary
-- **[Local Development Guide](docs/test_local_access.md)** - Local development without authentication
+- **[API Reference](docs/api/index.md)** - Complete API documentation
+- **[Architecture](docs/architecture/index.md)** - System design and architecture
+- **[Security](docs/security/index.md)** - Security features and best practices
+- **[Deployment](docs/deployment/index.md)** - Production deployment guides
+- **[Development](docs/development/index.md)** - Development setup and guidelines
+- **[Monitoring](docs/monitoring/index.md)** - Monitoring and observability
+- **[Integrations](docs/integrations/index.md)** - Mining pool, PoW, and DEX integration guides
+- **[Local Development Guide](docs/development/test_local_access.md)** - Local development without authentication
 
 ## 📁 Project Structure
 
 ```
 rust_verusd_rpc_server/
 ├── docs/                    # Documentation
-│   ├── SECURE_DEPLOYMENT_SUMMARY.md
 │   ├── test_local_access.md
 │   └── ...
 ├── examples/                # Example code and scripts
@@ -242,15 +241,6 @@ rust_verusd_rpc_server/
 
 ## 🆘 Support
 
-- 📖 **Documentation**: Check the [documentation](docs/) directory
-- 🐛 **Issues**: Create an issue on GitHub
-- 💬 **Discussions**: Use GitHub Discussions
-
----
-
-**Built with ❤️ by Nexlab-One**
-
-If you find this project valuable, please consider supporting:
-zs10u0vvlchlv0yuew4a87cvpesrvdl2yc7dda0q9kjdg4lmezsx4nmj88nna2vcd0m4hmc2eg948c  
-
-Every contribution helps us keep building. Thank you!
+- [Documentation](docs/)
+- [GitHub Issues](https://github.com/Nexlab/rust_verusd_rpc_server/issues)
+- [GitHub Discussions](https://github.com/Nexlab/rust_verusd_rpc_server/discussions)

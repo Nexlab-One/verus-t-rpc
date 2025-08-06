@@ -1,6 +1,6 @@
 # RPC Methods Reference
 
-This document provides a comprehensive reference for all supported RPC methods in the Verus RPC Server.
+Reference for all supported RPC methods in the Verus RPC Server.
 
 ## 📋 Method Categories
 

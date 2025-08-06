@@ -1,6 +1,6 @@
 # Verus RPC Server Documentation
 
-Welcome to the comprehensive documentation for the **Rust Verus RPC Server** - a production-ready, enterprise-grade RPC server for the Verus blockchain.
+Documentation for the Rust Verus RPC Server.
 
 ## 📚 Documentation Structure
 
@@ -17,41 +17,29 @@ Welcome to the comprehensive documentation for the **Rust Verus RPC Server** - a
 
 ### 🔌 [API Reference](./api/)
 - [RPC Methods](./api/rpc-methods.md)
-- [Authentication](./api/authentication.md)
 - [Request/Response Format](./api/request-response.md)
-- [Error Handling](./api/error-handling.md)
-- [Rate Limiting](./api/rate-limiting.md)
 
 ### 🛡️ [Security](./security/)
 - [Security Overview](./security/security-overview.md)
-- [Authentication & Authorization](./security/authentication.md)
-- [Security Headers](./security/security-headers.md)
-- [Input Validation](./security/input-validation.md)
-- [Rate Limiting](./security/rate-limiting.md)
-- [Security Best Practices](./security/best-practices.md)
 
 ### 🚀 [Deployment](./deployment/)
 - [Production Deployment](./deployment/production.md)
-- [Docker Deployment](./deployment/docker.md)
-- [Reverse Proxy Setup](./deployment/reverse-proxy.md)
-- [Environment Configuration](./deployment/environment.md)
-- [Monitoring & Logging](./deployment/monitoring.md)
-- [Redis Setup](./deployment/redis-setup.md)
+- [Reverse Proxy Deployment](./deployment/REVERSE_PROXY_DEPLOYMENT.md)
+- [Redis Setup](./deployment/REDIS_SETUP.md)
+- [Token Service Deployment](./deployment/token-service-deployment.md)
 
 ### 🔧 [Development](./development/)
 - [Development Setup](./development/setup.md)
-- [Testing Guide](./development/testing.md)
-- [Code Standards](./development/code-standards.md)
-- [Contributing Guidelines](./development/contributing.md)
-- [Implementation Summary](./development/implementation-summary.md)
-- [Test Suite Summary](./development/test-suite-summary.md)
-- [Deprecation Cleanup](./development/deprecation-cleanup.md)
+- [Configuration Reference](./development/configuration-reference.md)
+- [Local Development Guide](./development/test_local_access.md)
 
 ### 📊 [Monitoring & Observability](./monitoring/)
 - [Metrics & Monitoring](./monitoring/metrics.md)
-- [Health Checks](./monitoring/health-checks.md)
-- [Logging](./monitoring/logging.md)
-- [Performance Monitoring](./monitoring/performance.md)
+
+### 🔗 [Integrations](./integrations/)
+- [Mining Pool Integration](./integrations/mining-pool-integration-guide.md)
+- [PoW Integration](./integrations/pow-integration-guide.md)
+- [DEX Integration](./integrations/public-dex-integration.md)
 
 ## 🎯 Quick Navigation
 
@@ -67,21 +55,19 @@ Welcome to the comprehensive documentation for the **Rust Verus RPC Server** - a
 
 ### For DevOps/Operations
 1. [Production Deployment](./deployment/production.md)
-2. [Docker Setup](./deployment/docker.md)
+2. [Reverse Proxy Setup](./deployment/REVERSE_PROXY_DEPLOYMENT.md)
 3. [Monitoring Setup](./monitoring/metrics.md)
 
 ### For Security Teams
 1. [Security Overview](./security/security-overview.md)
-2. [Authentication Setup](./security/authentication.md)
-3. [Security Best Practices](./security/best-practices.md)
 
 ## 📋 Project Status
 
-- ✅ **Production Ready**: Fully tested and optimized
-- ✅ **71/71 Tests Passing**: 100% test coverage
-- ✅ **Zero Warnings**: Clean codebase
-- ✅ **Enterprise Security**: Comprehensive security features
-- ✅ **High Performance**: Optimized for production workloads
+- Production Ready
+- 71/71 Tests Passing
+- Zero Warnings
+- Enterprise Security
+- High Performance
 
 ## 🔗 External Resources
 
@@ -92,9 +78,8 @@ Welcome to the comprehensive documentation for the **Rust Verus RPC Server** - a
 
 ## 📞 Support
 
-- 📖 **Documentation**: This comprehensive guide
-- 🐛 **Issues**: [GitHub Issues](https://github.com/Nexlab/rust_verusd_rpc_server/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/Nexlab/rust_verusd_rpc_server/discussions)
+- [GitHub Issues](https://github.com/Nexlab/rust_verusd_rpc_server/issues)
+- [GitHub Discussions](https://github.com/Nexlab/rust_verusd_rpc_server/discussions)
 
 ---
 
