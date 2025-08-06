@@ -249,5 +249,8 @@ rust_verusd_rpc_server/
 ---
 
 **Built with ❤️ by Nexlab-One**
-If you find this project valuable, please consider supporting: zs10u0vvlchlv0yuew4a87cvpesrvdl2yc7dda0q9kjdg4lmezsx4nmj88nna2vcd0m4hmc2eg948c  
+
+If you find this project valuable, please consider supporting:
+zs10u0vvlchlv0yuew4a87cvpesrvdl2yc7dda0q9kjdg4lmezsx4nmj88nna2vcd0m4hmc2eg948c  
+
 Every contribution helps us keep building. Thank you!
