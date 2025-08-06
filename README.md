@@ -244,3 +244,11 @@ rust_verusd_rpc_server/
 - [Documentation](docs/)
 - [GitHub Issues](https://github.com/Nexlab/rust_verusd_rpc_server/issues)
 - [GitHub Discussions](https://github.com/Nexlab/rust_verusd_rpc_server/discussions)
+
+## Built with ❤️ by Nexlab-One
+
+If you find this project valuable, please consider supporting: 
+
+**Verus:** zs10u0vvlchlv0yuew4a87cvpesrvdl2yc7dda0q9kjdg4lmezsx4nmj88nna2vcd0m4hmc2eg948c
+
+Every contribution helps us keep building. Thank you!
