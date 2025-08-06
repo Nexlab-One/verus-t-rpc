@@ -1,19 +1,13 @@
 # Rust Verus RPC Server
 
-A **production-ready** RPC server for Verus blockchain built in Rust. Acts as a secure proxy between clients and the Verus daemon with comprehensive validation and security controls.
+A  RPC server for Verus blockchain built in Rust. Acts as a secure proxy between clients and the Verus daemon with comprehensive validation and security controls.
 
-## 🚀 Status:
+> **⚠️ Warning: This project is under active development.**
+>
+> Features, APIs, and configuration formats may change without notice.  
+> Use in production environments is **not recommended** at this stage.  
+> Please report issues and follow updates for breaking changes.
 
-- ✅ **71/71 Tests Passing** (100% test coverage)
-- ✅ **Zero Compiler Warnings** (Clean codebase)
-- ✅ **Enterprise Security** (JWT auth, rate limiting, security headers)
-
-## 🎯 Key Features
-
-- **🔒 Security**: JWT authentication, rate limiting, security headers, method validation
-- **⚡ Performance**: Redis caching, async processing
-- **📊 Monitoring**: Prometheus metrics, structured logging, health checks
-- **🏗️ Architecture**: Clean architecture with domain-driven design
 
 ## 📋 Prerequisites
 
@@ -252,3 +246,10 @@ If you find this project valuable, please consider supporting:
 **Verus:** zs10u0vvlchlv0yuew4a87cvpesrvdl2yc7dda0q9kjdg4lmezsx4nmj88nna2vcd0m4hmc2eg948c
 
 Every contribution helps us keep building. Thank you!
+
+## ⚠️ Liability Disclaimer
+
+This software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. In no event shall the authors or copyright holders, contributors, or affiliated organizations be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software.
+
+**You are solely responsible for deploying, configuring, and operating this software.**  
+Use in production environments is at your own risk. Always review, audit, and test the code and configuration before use, especially in security-critical or financial contexts.
