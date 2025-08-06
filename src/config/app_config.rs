@@ -1,35 +1,15 @@
+//! Application configuration structures
+//! 
+//! This module contains the main configuration structures for the application.
+
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
 use validator::Validate;
 
-/// Application configuration
-#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
-pub struct AppConfig {
-    /// Verus daemon RPC configuration
-    #[validate(nested)]
-    pub verus: VerusConfig,
-    
-    /// Server configuration
-    #[validate(nested)]
-    pub server: ServerConfig,
-    
-    /// Security configuration
-    #[validate(nested)]
-    pub security: SecurityConfig,
-    
-    /// Rate limiting configuration
-    #[validate(nested)]
-    pub rate_limit: RateLimitConfig,
-    
-    /// Logging configuration
-    #[validate(nested)]
-    pub logging: LoggingConfig,
-}
-
 /// Verus daemon configuration
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct VerusConfig {
-    /// RPC URL (e.g., "http://127.0.0.1:27486")
+    /// RPC URL
     #[validate(url)]
     pub rpc_url: String,
     
@@ -72,13 +52,13 @@ pub struct ServerConfig {
 /// Security configuration
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct SecurityConfig {
-    /// Allowed CORS origins
+    /// Allowed CORS origins (deprecated - use reverse proxy)
     pub cors_origins: Vec<String>,
     
-    /// Allowed CORS methods
+    /// Allowed CORS methods (deprecated - use reverse proxy)
     pub cors_methods: Vec<String>,
     
-    /// Allowed CORS headers
+    /// Allowed CORS headers (deprecated - use reverse proxy)
     pub cors_headers: Vec<String>,
     
     /// Enable request logging
@@ -89,6 +69,21 @@ pub struct SecurityConfig {
     
     /// Trusted proxy headers
     pub trusted_proxy_headers: Vec<String>,
+    
+    /// Enable custom security headers
+    pub enable_custom_headers: bool,
+    
+    /// Custom security header value
+    pub custom_security_header: Option<String>,
+    
+    /// Method-specific rate limits
+    pub method_rate_limits: std::collections::HashMap<String, RateLimitConfig>,
+    
+    /// JWT configuration
+    pub jwt: JwtConfig,
+    
+    /// Development mode - allows local access without authentication
+    pub development_mode: bool,
 }
 
 /// Rate limiting configuration
@@ -106,17 +101,80 @@ pub struct RateLimitConfig {
     pub enabled: bool,
 }
 
+/// JWT configuration
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct JwtConfig {
+    /// JWT secret key
+    #[validate(length(min = 32))]
+    pub secret_key: String,
+    
+    /// JWT token expiration time in seconds
+    #[validate(range(min = 60, max = 86400))] // 1 minute to 24 hours
+    pub expiration_seconds: u64,
+    
+    /// JWT issuer
+    #[validate(length(min = 1))]
+    pub issuer: String,
+    
+    /// JWT audience
+    #[validate(length(min = 1))]
+    pub audience: String,
+}
+
 /// Logging configuration
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct LoggingConfig {
-    /// Log level (trace, debug, info, warn, error)
+    /// Log level
+    #[validate(length(min = 1))]
     pub level: String,
     
-    /// Log format (json, text)
+    /// Log format
+    #[validate(length(min = 1))]
     pub format: String,
     
     /// Enable structured logging
     pub structured: bool,
+}
+
+/// Cache configuration
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct CacheConfig {
+    /// Enable caching
+    pub enabled: bool,
+    
+    /// Redis connection URL
+    #[validate(url)]
+    pub redis_url: String,
+    
+    /// Default TTL in seconds
+    #[validate(range(min = 1, max = 86400))] // 1 second to 24 hours
+    pub default_ttl: u64,
+    
+    /// Maximum cache size in bytes
+    #[validate(range(min = 1024, max = 1073741824))] // 1KB to 1GB
+    pub max_size: usize,
+}
+
+/// Application configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppConfig {
+    /// Verus daemon configuration
+    pub verus: VerusConfig,
+    
+    /// Server configuration
+    pub server: ServerConfig,
+    
+    /// Security configuration
+    pub security: SecurityConfig,
+    
+    /// Rate limiting configuration
+    pub rate_limit: RateLimitConfig,
+    
+    /// Logging configuration
+    pub logging: LoggingConfig,
+    
+    /// Cache configuration
+    pub cache: CacheConfig,
 }
 
 impl Default for AppConfig {
@@ -146,6 +204,16 @@ impl Default for AppConfig {
                 enable_request_logging: true,
                 enable_security_headers: true,
                 trusted_proxy_headers: vec!["X-Forwarded-For".to_string()],
+                enable_custom_headers: false,
+                custom_security_header: None,
+                method_rate_limits: std::collections::HashMap::new(),
+                jwt: JwtConfig {
+                    secret_key: "your-super-secret-jwt-key-that-should-be-32-chars-min".to_string(),
+                    expiration_seconds: 3600, // 1 hour
+                    issuer: "verus-rpc-server".to_string(),
+                    audience: "verus-clients".to_string(),
+                },
+                development_mode: false,
             },
             rate_limit: RateLimitConfig {
                 requests_per_minute: 1000,
@@ -157,6 +225,18 @@ impl Default for AppConfig {
                 format: "json".to_string(),
                 structured: true,
             },
+            cache: CacheConfig::default(),
+        }
+    }
+}
+
+impl Default for CacheConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            redis_url: "redis://127.0.0.1:6379".to_string(),
+            default_ttl: 300, // 5 minutes
+            max_size: 100 * 1024 * 1024, // 100MB
         }
     }
 }
@@ -168,16 +248,29 @@ impl AppConfig {
             .add_source(config::File::with_name("Conf").required(false))
             .add_source(config::Environment::with_prefix("VERUS_RPC").separator("__"))
             .build()
-            .map_err(|e| crate::error::AppError::Config(format!("Failed to build configuration: {}", e)))?;
+            .map_err(|e| crate::shared::error::AppError::Config(format!("Failed to build configuration: {}", e)))?;
         
         let config: AppConfig = config.try_deserialize()
-            .map_err(|e| crate::error::AppError::Config(format!("Failed to deserialize configuration: {}", e)))?;
+            .map_err(|e| crate::shared::error::AppError::Config(format!("Failed to deserialize configuration: {}", e)))?;
         
         // Validate configuration
-        config.validate()
-            .map_err(|e| crate::error::AppError::Validation(format!("Configuration validation failed: {}", e)))?;
+        config.validate_config()
+            .map_err(|e| crate::shared::error::AppError::Validation(format!("Configuration validation failed: {}", e)))?;
         
         Ok(config)
+    }
+    
+    /// Validate the entire configuration
+    pub fn validate_config(&self) -> Result<(), validator::ValidationErrors> {
+        // Validate each section
+        self.verus.validate()?;
+        self.server.validate()?;
+        self.security.validate()?;
+        self.rate_limit.validate()?;
+        self.logging.validate()?;
+        self.cache.validate()?;
+        
+        Ok(())
     }
     
     /// Get server address as string

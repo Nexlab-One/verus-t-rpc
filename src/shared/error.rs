@@ -1,3 +1,7 @@
+//! Error handling module
+//! 
+//! This module provides centralized error handling for the application.
+
 use thiserror::Error;
 use serde_json::Value;
 

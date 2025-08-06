@@ -1,0 +1,76 @@
+# Verus RPC Server Public DEX Configuration
+# This configuration is optimized for public DEX usage with appropriate rate limiting
+
+[verus]
+rpc_url = "http://127.0.0.1:27486"
+rpc_user = "your_rpc_username"
+rpc_password = "your_rpc_password"
+timeout_seconds = 30
+max_retries = 3
+
+[server]
+bind_address = "0.0.0.0"
+port = 8080
+max_request_size = 1048576
+worker_threads = 0
+ssl_enabled = false
+compression_enabled = true
+compression_min_size = 1024
+
+[security]
+# Allow all origins for DEX integration
+cors_origins = ["*"]
+cors_methods = ["GET", "POST", "OPTIONS"]
+cors_headers = ["Content-Type", "Authorization", "Accept"]
+enable_request_logging = true
+enable_security_headers = true
+trusted_proxy_headers = ["X-Forwarded-For", "X-Real-IP"]
+enable_custom_headers = true
+custom_security_header = "X-Verus-RPC-Server"
+method_rate_limits = {}
+development_mode = false
+
+[security.jwt]
+secret_key = "your-super-secret-jwt-key-that-is-at-least-32-characters-long"
+expiration_seconds = 3600  # 1 hour for DEX users
+issuer = "verus-rpc-server"
+audience = "verus-dex-clients"
+
+# Token issuance rate limiting
+[security.token_issuance]
+requests_per_hour = 10  # Limit token requests per IP
+enabled = true
+
+[rate_limit]
+# General RPC rate limiting
+requests_per_minute = 1000
+burst_size = 100
+enabled = true
+
+# Method-specific rate limits for DEX usage
+[rate_limit.methods]
+getinfo = 1000
+z_getbalance = 500
+z_getnewaddress = 100
+z_sendmany = 50
+getblock = 200
+
+[logging]
+level = "info"
+structured_logging = true
+format = "json"
+
+[cache]
+enabled = true
+redis_url = "redis://127.0.0.1:6379"
+default_ttl = 300
+max_size = 104857600
+
+# Token service configuration
+[token_service]
+port = 8081
+bind_address = "127.0.0.1"  # Internal only
+enable_cors = true
+allowed_origins = ["*"]
+rate_limit_requests_per_minute = 100
+enable_request_logging = true

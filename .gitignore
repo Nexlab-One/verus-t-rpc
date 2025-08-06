@@ -30,7 +30,7 @@ log/
 
 # Configuration files with sensitive data
 Conf.local.toml
-Conf.production.toml
+!Conf.production.toml
 Conf.staging.toml
 *.key
 *.pem
@@ -59,8 +59,7 @@ Thumbs.db
 *.old
 
 # Documentation build
-/docs/
-/doc/
+!/docs/
 
 # Test artifacts
 /coverage/

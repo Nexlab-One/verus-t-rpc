@@ -1,9 +1,14 @@
+//! HTTP models - Infrastructure concerns
+//! 
+//! This module contains models that are specific to infrastructure concerns
+//! like HTTP requests/responses, serialization, and external interfaces.
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use validator::Validate;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// JSON-RPC request structure
+/// HTTP JSON-RPC request structure (infrastructure concern)
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct JsonRpcRequest {
     /// JSON-RPC version
@@ -23,7 +28,7 @@ pub struct JsonRpcRequest {
     pub id: Option<Value>,
 }
 
-/// JSON-RPC response structure
+/// HTTP JSON-RPC response structure (infrastructure concern)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonRpcResponse {
     /// JSON-RPC version
@@ -42,7 +47,7 @@ pub struct JsonRpcResponse {
     pub id: Option<Value>,
 }
 
-/// JSON-RPC error structure
+/// HTTP JSON-RPC error structure (infrastructure concern)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonRpcError {
     /// Error code
@@ -56,7 +61,7 @@ pub struct JsonRpcError {
     pub data: Option<Value>,
 }
 
-/// Request context for tracking and logging
+/// HTTP request context for tracking and logging (infrastructure concern)
 #[derive(Debug, Clone)]
 pub struct RequestContext {
     /// Unique request ID
@@ -78,7 +83,7 @@ pub struct RequestContext {
     pub params: Option<Value>,
 }
 
-/// Rate limit information
+/// HTTP rate limit information (infrastructure concern)
 #[derive(Debug, Clone)]
 pub struct RateLimitInfo {
     /// Current request count
@@ -89,31 +94,6 @@ pub struct RateLimitInfo {
     
     /// Reset time
     pub reset_time: chrono::DateTime<chrono::Utc>,
-}
-
-/// Metrics data structure
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Metrics {
-    /// Total requests processed
-    pub total_requests: u64,
-    
-    /// Successful requests
-    pub successful_requests: u64,
-    
-    /// Failed requests
-    pub failed_requests: u64,
-    
-    /// Rate limited requests
-    pub rate_limited_requests: u64,
-    
-    /// Average response time in milliseconds
-    pub avg_response_time_ms: f64,
-    
-    /// Current active connections
-    pub active_connections: u32,
-    
-    /// Uptime in seconds
-    pub uptime_seconds: u64,
 }
 
 impl JsonRpcRequest {
@@ -130,7 +110,7 @@ impl JsonRpcRequest {
     /// Validate the request
     pub fn validate_request(&self) -> crate::Result<()> {
         self.validate()
-            .map_err(|e| crate::error::AppError::Validation(format!("Request validation failed: {}", e)))?;
+            .map_err(|e| crate::shared::error::AppError::Validation(format!("Request validation failed: {}", e)))?;
         
         Ok(())
     }

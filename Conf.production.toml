@@ -1,5 +1,5 @@
-# Verus RPC Server Configuration
-# Replace these values with your actual Verus daemon settings
+# Verus RPC Server Production Configuration
+# This configuration is for production deployment with full security enabled
 
 [verus]
 # The URL and port of your Verus daemon RPC endpoint
@@ -14,15 +14,15 @@ timeout_seconds = 30
 max_retries = 3
 
 [server]
-# Server address to bind to
-bind_address = "127.0.0.1"
+# Server address to bind to (0.0.0.0 for all interfaces)
+bind_address = "0.0.0.0"
 # Server port
 port = 8080
 # Maximum request size in bytes
 max_request_size = 1048576
 # Worker threads (0 for auto-detect)
 worker_threads = 0
-# Enable SSL/TLS
+# Enable SSL/TLS (should be handled by reverse proxy)
 ssl_enabled = false
 # Enable response compression
 compression_enabled = true
@@ -30,8 +30,8 @@ compression_enabled = true
 compression_min_size = 1024
 
 [security]
-# Allowed CORS origins
-cors_origins = ["*"]
+# Allowed CORS origins (restrict in production)
+cors_origins = ["https://yourdomain.com"]
 # Allowed CORS methods
 cors_methods = ["GET", "POST", "OPTIONS"]
 # Allowed CORS headers
@@ -41,20 +41,20 @@ enable_request_logging = true
 # Enable security headers
 enable_security_headers = true
 # Trusted proxy headers
-trusted_proxy_headers = ["X-Forwarded-For"]
+trusted_proxy_headers = ["X-Forwarded-For", "X-Real-IP"]
 # Enable custom security headers
-enable_custom_headers = false
+enable_custom_headers = true
 # Custom security header value
-custom_security_header = ""
+custom_security_header = "X-Verus-RPC-Server"
 # Method-specific rate limits
 method_rate_limits = {}
-# Development mode - allows local access without authentication (WARNING: disable in production!)
-development_mode = true
+# Development mode - DISABLED for production
+development_mode = false
 
 [security.jwt]
 # JWT secret key (generate a secure random key for production)
 secret_key = "your-super-secret-jwt-key-that-is-at-least-32-characters-long"
-# JWT token expiration time in seconds
+# JWT token expiration time in seconds (1 hour)
 expiration_seconds = 3600
 # JWT issuer
 issuer = "verus-rpc-server"
@@ -70,24 +70,19 @@ burst_size = 100
 enabled = true
 
 [logging]
-# Log level (trace, debug, info, warn, error)
+# Log level (info for production)
 level = "info"
-# Log format (json, text)
-format = "json"
 # Enable structured logging
-structured = true
+structured_logging = true
+# Log format (json for production)
+format = "json"
 
 [cache]
-# Enable response caching
-enabled = false
-# Redis connection URL (supports authentication: redis://username:password@host:port)
-# Examples:
-# - No auth: redis://127.0.0.1:6379
-# - With password: redis://:password@127.0.0.1:6379
-# - With username/password: redis://username:password@127.0.0.1:6379
-# - With SSL: rediss://127.0.0.1:6379
+# Enable Redis caching
+enabled = true
+# Redis connection URL
 redis_url = "redis://127.0.0.1:6379"
-# Default TTL in seconds
+# Default cache TTL in seconds
 default_ttl = 300
 # Maximum cache size in bytes
-max_size = 104857600
+max_size = 104857600  # 100MB

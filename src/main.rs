@@ -1,15 +1,15 @@
-use verus_t_rpc::{AppConfig, VerusRpcServer};
+use verus_rpc_server::{AppConfig, VerusRpcServer};
 use tracing::{error, info};
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
-    if let Err(e) = initialize_logging() {
-        eprintln!("Failed to initialize logging: {}", e);
-        std::process::exit(1);
-    }
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
 
-    info!("Starting Verus RPC Server...");
+    info!("Starting Verus RPC Server (Reverse Proxy Mode)");
+    info!("SSL/TLS, compression, and CORS should be handled by the reverse proxy");
 
     // Load configuration
     let config = match AppConfig::load() {
@@ -19,11 +19,26 @@ async fn main() {
         }
         Err(e) => {
             error!("Failed to load configuration: {}", e);
-            std::process::exit(1);
+            return Err(e.into());
         }
     };
 
-    // Create and start server
+    // Validate configuration for reverse proxy deployment
+    if let Err(e) = config.validate_config() {
+        error!("Configuration validation failed: {}", e);
+        return Err(format!("Configuration validation failed: {}", e).into());
+    }
+
+    // Print deployment recommendations
+    info!("=== Reverse Proxy Deployment Recommendations ===");
+    info!("1. Configure SSL/TLS termination in your reverse proxy (nginx, Caddy, etc.)");
+    info!("2. Configure compression (gzip/brotli) in your reverse proxy");
+    info!("3. Configure CORS headers in your reverse proxy");
+    info!("4. Set trusted_proxy_headers for proper client IP handling");
+    info!("5. Configure rate limiting based on real client IPs from proxy headers");
+    info!("================================================");
+
+    // Create and run the server
     let server = match VerusRpcServer::new(config).await {
         Ok(server) => {
             info!("Server initialized successfully");
@@ -31,36 +46,15 @@ async fn main() {
         }
         Err(e) => {
             error!("Failed to initialize server: {}", e);
-            std::process::exit(1);
+            return Err(e.into());
         }
     };
 
-    // Start the server
-    info!("Server starting on {}", server.config().server_address());
-    
+    // Run the server
     if let Err(e) = server.run().await {
         error!("Server error: {}", e);
-        std::process::exit(1);
+        return Err(e.into());
     }
-}
 
-fn initialize_logging() -> Result<(), Box<dyn std::error::Error>> {
-    use tracing_subscriber::{fmt, EnvFilter};
-
-    let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
-
-    let subscriber = fmt::Subscriber::builder()
-        .with_env_filter(filter)
-        .with_target(false)
-        .with_thread_ids(true)
-        .with_thread_names(true)
-        .with_file(true)
-        .with_line_number(true)
-        .with_ansi(false)
-        .finish();
-
-    tracing::subscriber::set_global_default(subscriber)?;
-    
     Ok(())
 }
