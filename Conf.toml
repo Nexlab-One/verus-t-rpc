@@ -1,5 +1,13 @@
 # Verus RPC Server Configuration
 # Replace these values with your actual Verus daemon settings
+#
+# Available HTTP Endpoints:
+# - POST /                    - JSON-RPC 2.0 endpoint
+# - GET /health              - Health check (JSON)
+# - GET /metrics             - Metrics (JSON)
+# - GET /metrics/prometheus  - Prometheus exposition format (text/plain)
+# - POST /pool/share         - Mining pool share validation
+# - GET /pool/metrics        - Mining pool metrics
 
 [verus]
 # The URL and port of your Verus daemon RPC endpoint

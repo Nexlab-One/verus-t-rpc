@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 # Web framework
-warp = { version = "0.4.0", features = ["server"] }
+warp = { version = "0.4.1", features = ["server"], default-features = false }
 tokio = { version = "1.47.1", features = ["full"] }
 
 # JSON and serialization
@@ -68,3 +68,4 @@ path = "src/bin/token_service.rs"
 
 [dev-dependencies]
 tokio-test = "0.4.4"
+warp = { version = "0.4.1", features = ["test"], default-features = false }

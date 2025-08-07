@@ -1,5 +1,13 @@
 # Verus RPC Server Mining Pool Integration Configuration
 # This configuration enables mining pool integration for enhanced PoW validation
+#
+# Available HTTP Endpoints:
+# - POST /                    - JSON-RPC 2.0 endpoint
+# - GET /health              - Health check (JSON)
+# - GET /metrics             - Metrics (JSON)
+# - GET /metrics/prometheus  - Prometheus exposition format (text/plain)
+# - POST /pool/share         - Mining pool share validation (ENABLED)
+# - GET /pool/metrics        - Mining pool metrics (ENABLED)
 
 [verus]
 # The URL and port of your Verus daemon RPC endpoint

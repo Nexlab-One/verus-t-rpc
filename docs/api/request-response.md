@@ -2,16 +2,16 @@
 
 This document describes the API endpoints, request/response formats, and usage patterns for the Verus RPC Server.
 
-## 🔌 API Overview
+## API Overview
 
 The server provides a JSON-RPC 2.0 compliant API with the following endpoints:
 
-- **`POST /`** - Main RPC endpoint
-- **`GET /health`** - Health check
-- **`GET /metrics`** - Prometheus metrics
-- **`GET /prometheus`** - Raw metrics data
+- `POST /` – JSON-RPC 2.0 endpoint
+- `GET /health` – Health check (JSON)
+- `GET /metrics` – Metrics (JSON)
+- `GET /metrics/prometheus` – Prometheus exposition format (text/plain)
 
-## 📝 Request Format
+## Request Format
 
 ### JSON-RPC 2.0 Standard
 
@@ -48,7 +48,7 @@ curl -X POST http://127.0.0.1:8080/ \
   }'
 ```
 
-## 📤 Response Format
+## Response Format
 
 ### Success Response
 
@@ -92,7 +92,7 @@ curl -X POST http://127.0.0.1:8080/ \
 | -32003 | Rate limited | Too many requests |
 | -32004 | Validation error | Parameter validation failed |
 
-## 🔐 Authentication
+## Authentication
 
 ### Development Mode
 
@@ -114,18 +114,16 @@ curl -X POST http://127.0.0.1:8080/ \
   }'
 ```
 
-## 📊 Health Check Endpoint
+## Health Check Endpoint
 
 ### GET /health
 
-Returns server health status.
-
-**Request:**
+Request:
 ```bash
 curl http://127.0.0.1:8080/health
 ```
 
-**Response:**
+Response:
 ```json
 {
   "status": "healthy",
@@ -135,59 +133,47 @@ curl http://127.0.0.1:8080/health
 }
 ```
 
-## 📈 Metrics Endpoints
+## Metrics Endpoints
 
-### GET /metrics
+### GET /metrics (JSON)
 
-Returns Prometheus-formatted metrics.
-
-**Request:**
+Request:
 ```bash
 curl http://127.0.0.1:8080/metrics
 ```
 
-**Response:**
+Response (example):
+```json
+{
+  "total_requests": 100,
+  "successful_requests": 98,
+  "failed_requests": 2,
+  "rate_limited_requests": 0,
+  "avg_response_time_ms": 12.3,
+  "active_connections": 5,
+  "uptime_seconds": 3600
+}
+```
+
+### GET /metrics/prometheus (text/plain)
+
+Request:
+```bash
+curl http://127.0.0.1:8080/metrics/prometheus
+```
+
+Response (example):
 ```
 # HELP verus_rpc_requests_total Total number of RPC requests
 # TYPE verus_rpc_requests_total counter
 verus_rpc_requests_total{method="getinfo"} 42
-
-# HELP verus_rpc_request_duration_seconds Request duration in seconds
-# TYPE verus_rpc_request_duration_seconds histogram
-verus_rpc_request_duration_seconds_bucket{method="getinfo",le="0.1"} 35
-verus_rpc_request_duration_seconds_bucket{method="getinfo",le="0.5"} 42
-verus_rpc_request_duration_seconds_bucket{method="getinfo",le="1.0"} 42
-verus_rpc_request_duration_seconds_bucket{method="getinfo",le="+Inf"} 42
-verus_rpc_request_duration_seconds_sum{method="getinfo"} 2.5
-verus_rpc_request_duration_seconds_count{method="getinfo"} 42
 ```
 
-### GET /prometheus
-
-Returns raw metrics data in JSON format.
-
-**Request:**
-```bash
-curl http://127.0.0.1:8080/prometheus
-```
-
-**Response:**
-```json
-{
-  "requests_total": 42,
-  "requests_duration_ms": 2500,
-  "error_count": 2,
-  "rate_limit_hits": 0,
-  "cache_hits": 15,
-  "cache_misses": 27
-}
-```
-
-## 🔄 Rate Limiting
+## Rate Limiting
 
 The API implements rate limiting based on IP address. When rate limited, you'll receive:
 
-**Response (429 Too Many Requests):**
+Response (429 Too Many Requests):
 ```json
 {
   "jsonrpc": "2.0",
@@ -204,7 +190,7 @@ The API implements rate limiting based on IP address. When rate limited, you'll 
 }
 ```
 
-**Headers:**
+Headers:
 ```
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 0
@@ -212,7 +198,7 @@ X-RateLimit-Reset: 1640995200
 Retry-After: 60
 ```
 
-## 🛡️ Security Headers
+## Security Headers
 
 All responses include security headers:
 
@@ -228,13 +214,11 @@ Pragma: no-cache
 Expires: 0
 ```
 
-## 📝 Common RPC Methods
+## Common RPC Methods
 
 ### getinfo
 
-Get general information about the Verus daemon.
-
-**Request:**
+Request:
 ```json
 {
   "jsonrpc": "2.0",
@@ -244,7 +228,7 @@ Get general information about the Verus daemon.
 }
 ```
 
-**Response:**
+Response:
 ```json
 {
   "jsonrpc": "2.0",
@@ -272,9 +256,7 @@ Get general information about the Verus daemon.
 
 ### getblock
 
-Get block information by hash.
-
-**Request:**
+Request:
 ```json
 {
   "jsonrpc": "2.0",
@@ -284,7 +266,7 @@ Get block information by hash.
 }
 ```
 
-**Response:**
+Response:
 ```json
 {
   "jsonrpc": "2.0",
@@ -309,7 +291,7 @@ Get block information by hash.
 }
 ```
 
-## 🚨 Error Handling
+## Error Handling
 
 ### Validation Errors
 
@@ -350,11 +332,11 @@ When requesting a method not in the allowlist:
 }
 ```
 
-## 📚 Complete Method List
+## Complete Method List
 
 For a complete list of supported RPC methods, see [RPC Methods](./rpc-methods.md).
 
-## 🔗 Related Documentation
+## Related Documentation
 
 - [Authentication](./authentication.md) - Detailed authentication guide
 - [Error Handling](./error-handling.md) - Comprehensive error handling

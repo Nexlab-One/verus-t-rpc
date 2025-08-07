@@ -102,16 +102,16 @@ impl ResponseFormatter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use warp::Reply;
 
     #[test]
     fn test_success_response_creation() {
         let result = serde_json::json!({"version": "1.0.0"});
         let id = Some(serde_json::json!(1));
         
-        let _response = ResponseFormatter::success(result.clone(), id.clone());
-        
-        // Test that the response was created successfully
-        assert!(std::any::type_name::<warp::reply::Json>() == std::any::type_name::<warp::reply::Json>());
+        let reply = ResponseFormatter::success(result.clone(), id.clone());
+        let response = reply.into_response();
+        assert_eq!(response.status(), warp::http::StatusCode::OK);
     }
 
     #[test]
@@ -119,108 +119,81 @@ mod tests {
         let error = JsonRpcError::new(-32601, "Method not found".to_string(), None);
         let id = Some(serde_json::json!(1));
         
-        let _response = ResponseFormatter::error(error.clone(), id.clone());
-        
-        // Test that the response was created successfully
-        assert!(std::any::type_name::<warp::reply::Json>() == std::any::type_name::<warp::reply::Json>());
+        let reply = ResponseFormatter::error(error.clone(), id.clone());
+        let response = reply.into_response();
+        assert_eq!(response.status(), warp::http::StatusCode::OK);
     }
 
     #[test]
     fn test_error_with_status_creation() {
         let error = JsonRpcError::new(-32601, "Method not found".to_string(), None);
         let id = Some(serde_json::json!(1));
-        let status = StatusCode::METHOD_NOT_ALLOWED;
-        
-        let _response = ResponseFormatter::error_with_status(error, id.clone(), status);
-        
-        // Test that the response was created successfully
-        assert!(std::any::type_name::<warp::reply::WithStatus<warp::reply::Json>>() == std::any::type_name::<warp::reply::WithStatus<warp::reply::Json>>());
+        let status = warp::http::StatusCode::BAD_REQUEST;
+        let reply = ResponseFormatter::error_with_status(error, id.clone(), status);
+        let response = reply.into_response();
+        assert_eq!(response.status(), warp::http::StatusCode::BAD_REQUEST);
     }
 
     #[test]
     fn test_from_app_error_method_not_allowed() {
-        let error = AppError::MethodNotAllowed { method: "invalid_method".to_string() };
+        let error = crate::shared::error::AppError::MethodNotAllowed { method: "bad".to_string() };
         let id = Some(serde_json::json!(1));
-        
-        let _response = ResponseFormatter::from_app_error(&error, id.clone());
-        
-        // Test that the response was created successfully
-        assert!(std::any::type_name::<warp::reply::WithStatus<warp::reply::Json>>() == std::any::type_name::<warp::reply::WithStatus<warp::reply::Json>>());
+        let reply = ResponseFormatter::from_app_error(&error, id.clone());
+        let response = reply.into_response();
+        assert_eq!(response.status(), warp::http::StatusCode::METHOD_NOT_ALLOWED);
     }
 
     #[test]
     fn test_from_app_error_invalid_parameters() {
-        let error = AppError::InvalidParameters { 
-            method: "getinfo".to_string(), 
-            reason: "Invalid params".to_string() 
-        };
+        let error = crate::shared::error::AppError::InvalidParameters { method: "getinfo".to_string(), reason: "bad".to_string() };
         let id = Some(serde_json::json!(1));
-        
-        let _response = ResponseFormatter::from_app_error(&error, id.clone());
-        
-        // Test that the response was created successfully
-        assert!(std::any::type_name::<warp::reply::WithStatus<warp::reply::Json>>() == std::any::type_name::<warp::reply::WithStatus<warp::reply::Json>>());
+        let reply = ResponseFormatter::from_app_error(&error, id.clone());
+        let response = reply.into_response();
+        assert_eq!(response.status(), warp::http::StatusCode::BAD_REQUEST);
     }
 
     #[test]
     fn test_from_app_error_rate_limit() {
-        let error = AppError::RateLimit;
+        let error = crate::shared::error::AppError::RateLimit;
         let id = Some(serde_json::json!(1));
-        
-        let _response = ResponseFormatter::from_app_error(&error, id.clone());
-        
-        // Test that the response was created successfully
-        assert!(std::any::type_name::<warp::reply::WithStatus<warp::reply::Json>>() == std::any::type_name::<warp::reply::WithStatus<warp::reply::Json>>());
+        let reply = ResponseFormatter::from_app_error(&error, id.clone());
+        let response = reply.into_response();
+        assert_eq!(response.status(), warp::http::StatusCode::TOO_MANY_REQUESTS);
     }
 
     #[test]
     fn test_from_app_error_request_too_large() {
-        let error = AppError::RequestTooLarge { size: 1024, limit: 512 };
+        let error = crate::shared::error::AppError::RequestTooLarge { size: 1024 * 1024, limit: 1024 };
         let id = Some(serde_json::json!(1));
-        
-        let _response = ResponseFormatter::from_app_error(&error, id.clone());
-        
-        // Test that the response was created successfully
-        assert!(std::any::type_name::<warp::reply::WithStatus<warp::reply::Json>>() == std::any::type_name::<warp::reply::WithStatus<warp::reply::Json>>());
+        let reply = ResponseFormatter::from_app_error(&error, id.clone());
+        let response = reply.into_response();
+        assert_eq!(response.status(), warp::http::StatusCode::PAYLOAD_TOO_LARGE);
     }
 
     #[test]
     fn test_from_app_error_authentication() {
-        let error = AppError::Authentication("Invalid token".to_string());
+        let error = crate::shared::error::AppError::Authentication("nope".to_string());
         let id = Some(serde_json::json!(1));
-        
-        let _response = ResponseFormatter::from_app_error(&error, id.clone());
-        
-        // Test that the response was created successfully
-        assert!(std::any::type_name::<warp::reply::WithStatus<warp::reply::Json>>() == std::any::type_name::<warp::reply::WithStatus<warp::reply::Json>>());
+        let reply = ResponseFormatter::from_app_error(&error, id.clone());
+        let response = reply.into_response();
+        assert_eq!(response.status(), warp::http::StatusCode::UNAUTHORIZED);
     }
 
     #[test]
     fn test_health_response_creation() {
         let status = "healthy";
         let version = "1.0.0";
-        
-        let _response = ResponseFormatter::health(status, version);
-        
-        // Test that the response was created successfully
-        assert!(std::any::type_name::<warp::reply::Json>() == std::any::type_name::<warp::reply::Json>());
+        let reply = ResponseFormatter::health(status, version);
+        let response = reply.into_response();
+        assert_eq!(response.status(), warp::http::StatusCode::OK);
     }
 
     #[test]
     fn test_metrics_response_creation() {
-        let metrics = crate::shared::metrics::Metrics {
-            total_requests: 100,
-            successful_requests: 95,
-            failed_requests: 5,
-            rate_limited_requests: 2,
-            avg_response_time_ms: 150.0,
-            active_connections: 10,
-            uptime_seconds: 3600,
-        };
+        let metrics = crate::shared::metrics::MetricsUtils::default().get_metrics();
         
-        let _response = ResponseFormatter::metrics(&metrics);
-        
-        // Test that the response was created successfully
-        assert!(std::any::type_name::<warp::reply::Json>() == std::any::type_name::<warp::reply::Json>());
+        let reply = ResponseFormatter::metrics(&metrics);
+        let response = reply.into_response();
+        assert_eq!(response.status(), warp::http::StatusCode::OK);
     }
 } 

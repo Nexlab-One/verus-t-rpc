@@ -50,15 +50,18 @@ The Verus RPC Server follows **Clean Architecture** principles with a **layered 
 **Purpose**: Handle HTTP requests and responses using the Warp framework.
 
 **Components**:
-- **HTTP Server**: Warp-based async server
-- **Request Routing**: Route requests to appropriate handlers
-- **Response Formatting**: Format responses as JSON-RPC 2.0
-- **Middleware Integration**: Apply security, rate limiting, caching
+- **HTTP Server**: Warp-based async server with in-memory testing
+- **Request Routing**: Route requests to appropriate handlers (`/`, `/health`, `/metrics`, `/metrics/prometheus`, `/pool/*`)
+- **Response Formatting**: Format responses as JSON-RPC 2.0 with security headers
+- **Middleware Integration**: Apply security, rate limiting, caching, validation
 
 **Key Files**:
 - `src/infrastructure/http/server.rs` - Main HTTP server
+- `src/infrastructure/http/routes/*` - Route definitions
+- `src/infrastructure/http/handlers/*` - Request handlers
+- `src/infrastructure/http/processors/*` - Request processing (validation, rate limit, cache)
 - `src/infrastructure/http/responses.rs` - Response formatting
-- `src/main.rs` - Application entry point
+- `src/infrastructure/http/utils.rs` - HTTP utilities
 
 ### Infrastructure Layer
 
@@ -143,55 +146,62 @@ The Verus RPC Server follows **Clean Architecture** principles with a **layered 
 
 #### 1. **Request Reception**
 ```rust
-// src/infrastructure/http/server.rs
-async fn handle_rpc_request(
-    request: RpcRequest,
-    config: Arc<AppConfig>,
-    // ... other dependencies
-) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
-    // Request processing begins
+// src/infrastructure/http/handlers/rpc.rs
+pub async fn handle_rpc_request(
+    request: JsonRpcRequest,
+    client_ip: String,
+    rpc_use_case: Arc<ProcessRpcRequestUseCase>,
+    config: AppConfig,
+    cache_middleware: Arc<CacheMiddleware>,
+    rate_limit_middleware: Arc<RateLimitMiddleware>,
+) -> Result<impl Reply, warp::reject::Rejection> {
+    // Request processing with middleware chain
 }
 ```
 
 #### 2. **Middleware Processing**
 ```rust
-// src/middleware/rate_limit.rs
-pub async fn rate_limit_middleware(
-    request: RpcRequest,
-    rate_limiter: Arc<RateLimiter>,
-) -> Result<RpcRequest, AppError> {
-    // Rate limiting check
+// src/infrastructure/http/processors/base.rs
+pub async fn check_rate_limit(
+    client_ip: &str,
+    context: &RequestContext,
+    request: &JsonRpcRequest,
+    rate_limit_middleware: &Arc<RateLimitMiddleware>,
+    config: &AppConfig,
+) -> Result<(), warp::reply::WithStatus<Box<dyn warp::Reply>>> {
+    // Rate limiting validation
 }
 ```
 
 #### 3. **Use Case Execution**
 ```rust
-// src/application/use_cases/rpc_use_case.rs
-pub async fn execute_rpc_method(
+// src/application/use_cases.rs
+pub async fn execute(
+    &self,
     request: RpcRequest,
-    rpc_adapter: Arc<dyn RpcAdapter>,
-    cache_adapter: Arc<dyn CacheAdapter>,
 ) -> Result<RpcResponse, AppError> {
-    // Business logic execution
+    // Business logic with domain services
 }
 ```
 
 #### 4. **Domain Logic**
 ```rust
-// src/domain/services/rpc_service.rs
+// src/application/services.rs
 pub struct RpcService {
-    // Domain-specific business logic
+    config: Arc<AppConfig>,
+    security_validator: Arc<SecurityValidator>,
 }
 ```
 
 #### 5. **Infrastructure Interaction**
 ```rust
-// src/infrastructure/adapters/rpc.rs
-pub async fn call_verus_method(
+// src/infrastructure/adapters/external_rpc.rs
+pub async fn call_method(
+    &self,
     method: &str,
-    params: &[Value],
-) -> Result<Value, AppError> {
-    // External RPC call
+    params: &[serde_json::Value],
+) -> Result<serde_json::Value, AppError> {
+    // Verus daemon RPC call
 }
 ```
 
@@ -202,12 +212,14 @@ pub async fn call_verus_method(
 The system uses dependency injection to manage component dependencies:
 
 ```rust
-pub struct HttpServer {
-    config: Arc<AppConfig>,
-    rpc_adapter: Arc<dyn RpcAdapter>,
-    cache_adapter: Arc<dyn CacheAdapter>,
-    rate_limiter: Arc<RateLimiter>,
-    // ... other dependencies
+// Route creation with dependencies
+pub fn create_rpc_route(
+    config: AppConfig,
+    rpc_use_case: Arc<ProcessRpcRequestUseCase>,
+    cache_middleware: Arc<CacheMiddleware>,
+    rate_limit_middleware: Arc<RateLimitMiddleware>,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    // Route with middleware chain
 }
 ```
 

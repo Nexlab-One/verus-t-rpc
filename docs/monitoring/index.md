@@ -29,3 +29,10 @@ The Rust Verus RPC Server provides monitoring capabilities:
 - **Development**: [../development/](development/) - Development monitoring setup
 - **Security**: [../security/](security/) - Security monitoring and logging
 - **Configuration**: [../development/configuration-reference.md](development/configuration-reference.md) - Monitoring configuration options
+
+## 📝 Monitoring & Metrics Overview
+
+- **Metrics Endpoints**:
+  - `/metrics`: Exposes metrics in JSON format
+  - `/metrics/prometheus`: Exposes metrics in Prometheus-compatible text format
+- **Further Details**: See [Metrics and Observability](metrics.md) for a complete guide to available metrics and integration instructions

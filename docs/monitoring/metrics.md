@@ -236,11 +236,11 @@ scrape_configs:
 Access Prometheus metrics:
 
 ```bash
-# Prometheus format
+# JSON format
 curl http://127.0.0.1:8080/metrics
 
-# JSON format
-curl http://127.0.0.1:8080/prometheus
+# Prometheus format
+curl http://127.0.0.1:8080/metrics/prometheus
 ```
 
 ### Custom Metrics
