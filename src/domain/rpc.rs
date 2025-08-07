@@ -89,6 +89,9 @@ pub struct ClientInfo {
     /// User agent
     pub user_agent: Option<String>,
     
+    /// Authorization bearer token
+    pub auth_token: Option<String>,
+    
     /// Request timestamp
     pub timestamp: chrono::DateTime<chrono::Utc>,
 }

@@ -16,7 +16,7 @@ The Verus RPC Server implements a **multi-layered security approach** following 
 │    • IP Whitelisting                                            │
 ├─────────────────────────────────────────────────────────────────┤
 │ 2. Application Security (RPC Server)                            │
-│    • Authentication & Authorization                             │
+│    • HTTP Header-Based Authentication                           │
 │    • Rate Limiting                                              │
 │    • Input Validation                                           │
 │    • Security Headers                                           │
@@ -30,9 +30,9 @@ The Verus RPC Server implements a **multi-layered security approach** following 
 
 ## 🔐 Authentication & Authorization
 
-### JWT Token Authentication
+### HTTP Header-Based JWT Token Authentication
 
-The server uses **JSON Web Tokens (JWT)** for stateless authentication:
+The server uses **JSON Web Tokens (JWT)** for stateless authentication, with tokens extracted from HTTP Authorization headers:
 
 #### Token Structure
 ```json
@@ -52,6 +52,40 @@ The server uses **JSON Web Tokens (JWT)** for stateless authentication:
 }
 ```
 
+#### HTTP Header Extraction
+```bash
+# Include JWT token in Authorization header
+curl -X POST http://127.0.0.1:8080/ \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc": "2.0", "method": "getinfo", "params": [], "id": 1}'
+```
+
+#### Authentication Flow
+```
+1. HTTP Request with Authorization Header
+   ↓
+2. Header Extraction in Route
+   ├─ Authorization: Bearer <token>
+   ├─ User-Agent: <client_info>
+   └─ X-Forwarded-For: <client_ip>
+   ↓
+3. RequestContext Creation
+   ├─ auth_token: from Authorization header
+   ├─ user_agent: from User-Agent header
+   └─ client_ip: validated IP address
+   ↓
+4. Domain Model Conversion
+   ├─ ClientInfo with auth_token field
+   └─ RpcRequest with complete client context
+   ↓
+5. RpcService Processing
+   ├─ Extract auth_token from client_info
+   ├─ Validate with AuthenticationAdapter
+   ├─ Create SecurityContext with permissions
+   └─ Apply security validation
+```
+
 #### Configuration
 ```toml
 [jwt]
@@ -59,15 +93,6 @@ secret_key = "your-32-character-secret-key-here"
 expiration_seconds = 3600
 issuer = "verus-rpc-server"
 audience = "verus-clients"
-```
-
-#### Usage
-```bash
-# Include JWT token in requests
-curl -X POST http://127.0.0.1:8080/ \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc": "2.0", "method": "getinfo", "params": [], "id": 1}'
 ```
 
 ### Development Mode
@@ -80,6 +105,25 @@ development_mode = true  # Disables authentication
 ```
 
 **⚠️ Warning**: Never use development mode in production!
+
+### Permission-Based Access Control
+
+The server implements method-specific permission requirements:
+
+```rust
+pub struct RpcMethod {
+    pub name: String,
+    pub description: String,
+    pub read_only: bool,
+    pub required_permissions: Vec<String>,
+    pub parameter_rules: Vec<ParameterRule>,
+}
+```
+
+**Example Method Definitions**:
+- `getinfo`: Requires `["read"]` permission
+- `z_importviewingkey`: Requires `["write"]` permission
+- `getblock`: Requires `["read"]` permission with hash validation
 
 ## 🚦 Rate Limiting
 
@@ -199,259 +243,240 @@ custom_headers = [
 
 ## 🔍 Input Validation
 
+### Parameter Validation
+
+The server implements comprehensive parameter validation:
+
+#### Validation Rules
+```rust
+pub struct ParameterRule {
+    pub index: usize,
+    pub name: String,
+    pub param_type: ParameterType,
+    pub required: bool,
+    pub constraints: Vec<Constraint>,
+}
+```
+
+#### Supported Constraints
+- **MinLength**: Minimum string length validation
+- **MaxLength**: Maximum string length validation
+- **Pattern**: Regex pattern matching
+- **MinValue**: Minimum numeric value
+- **MaxValue**: Maximum numeric value
+- **Custom**: Custom validation rules
+
+#### Example Validation
+```rust
+// Hash parameter validation
+ParameterRule {
+    index: 0,
+    name: "hash".to_string(),
+    param_type: ParameterType::String,
+    required: true,
+    constraints: vec![Constraint::MinLength(64)],
+}
+
+// Block type validation
+ParameterRule {
+    index: 1,
+    name: "type".to_string(),
+    param_type: ParameterType::String,
+    required: false,
+    constraints: vec![Constraint::Custom("sprout|sapling|orchard".to_string())],
+}
+```
+
 ### Method Allowlist
 
-Only pre-approved RPC methods are allowed:
+Only explicitly allowed RPC methods are processed:
 
 ```rust
-// src/allowlist.rs
-pub const ALLOWED_METHODS: &[&str] = &[
-    "getinfo",
-    "getblockchaininfo",
-    "getblock",
-    "getblockhash",
-    // ... 60+ methods
+// Supported methods with security rules
+let method_registry = [
+    ("getinfo", RpcMethod {
+        name: "getinfo".to_string(),
+        description: "Get blockchain information".to_string(),
+        read_only: true,
+        required_permissions: vec!["read".to_string()],
+        parameter_rules: vec![],
+    }),
+    ("getblock", RpcMethod {
+        name: "getblock".to_string(),
+        description: "Get block information".to_string(),
+        read_only: true,
+        required_permissions: vec!["read".to_string()],
+        parameter_rules: vec![
+            ParameterRule {
+                index: 0,
+                name: "hash".to_string(),
+                param_type: ParameterType::String,
+                required: true,
+                constraints: vec![Constraint::MinLength(64)],
+            },
+        ],
+    }),
+    // ... other methods
 ];
 ```
 
-### Parameter Validation
-
-Comprehensive parameter validation for each method:
-
-#### Type Validation
-```rust
-// Validate parameter types
-match method {
-    "getblock" => {
-        validate_string_param(params.get(0), "block_hash")?;
-        validate_bool_param(params.get(1), "verbose")?;
-    }
-    "getrawtransaction" => {
-        validate_string_param(params.get(0), "txid")?;
-        validate_bool_param(params.get(1), "verbose")?;
-    }
-    // ... other methods
-}
-```
-
-#### Format Validation
-```rust
-// Validate block hash format
-fn validate_block_hash(hash: &str) -> Result<(), ValidationError> {
-    if !hash.chars().all(|c| c.is_ascii_hexdigit()) || hash.len() != 64 {
-        return Err(ValidationError::InvalidFormat(
-            "Block hash must be 64 character hex string".to_string()
-        ));
-    }
-    Ok(())
-}
-```
-
-#### Size Limits
-```rust
-// Validate parameter sizes
-const MAX_PARAM_LENGTH: usize = 1024 * 1024; // 1MB
-
-if param.len() > MAX_PARAM_LENGTH {
-    return Err(ValidationError::TooLarge(
-        format!("Parameter exceeds maximum size of {} bytes", MAX_PARAM_LENGTH)
-    ));
-}
-```
-
-### Injection Prevention
-
-#### SQL Injection Prevention
-- No direct SQL queries in the application
-- All data is passed through parameterized interfaces
-
-#### Command Injection Prevention
-- No shell command execution
-- All external calls use safe APIs
-
-#### XSS Prevention
-- Input sanitization
-- Output encoding
-- CSP headers
-
-## 🔒 CORS Configuration
-
-### Cross-Origin Resource Sharing
-
-Configurable CORS settings for web applications:
-
-```toml
-[security]
-cors_origins = ["https://yourdomain.com", "https://app.yourdomain.com"]
-cors_methods = ["GET", "POST"]
-cors_headers = ["Content-Type", "Authorization"]
-```
-
-### CORS Headers
-```
-Access-Control-Allow-Origin: https://yourdomain.com
-Access-Control-Allow-Methods: GET, POST
-Access-Control-Allow-Headers: Content-Type, Authorization
-Access-Control-Max-Age: 86400
-```
-
-## 🚨 Error Handling
+## 🔒 Error Handling
 
 ### Secure Error Responses
 
-Error responses don't leak sensitive information:
+The server implements secure error handling to prevent information disclosure:
 
-#### Good Error Response
+#### Error Response Format
 ```json
 {
   "jsonrpc": "2.0",
   "error": {
-    "code": -32004,
-    "message": "Validation error",
+    "code": -32001,
+    "message": "Authentication failed",
     "data": {
-      "field": "params[0]",
-      "reason": "Invalid format"
+      "request_id": "req-123"
     }
   },
   "id": 1
 }
 ```
 
-#### Bad Error Response (Avoided)
-```json
-{
-  "error": "Database connection failed: user=admin, password=secret123"
-}
-```
+#### Error Codes
+- `-32001`: Authentication error
+- `-32002`: Authorization error
+- `-32003`: Rate limit exceeded
+- `-32004`: Invalid parameters
+- `-32005`: Method not allowed
+- `-32006`: Internal server error
 
 ### Error Logging
 
-Security events are logged for monitoring:
+Comprehensive error logging for security monitoring:
 
 ```rust
-// Log authentication failures
-tracing::warn!(
-    "Authentication failed for IP: {}, reason: {}",
-    client_ip,
-    reason
-);
-
-// Log rate limit violations
-tracing::info!(
-    "Rate limit exceeded for IP: {}, limit: {}, window: {}",
-    client_ip,
-    limit,
-    window
+// Security event logging
+warn!(
+    request_id = %context.request_id,
+    client_ip = %context.client_ip,
+    method = %request.method,
+    "Authentication failed: invalid token"
 );
 ```
 
-## 📊 Security Monitoring
+## 🔍 Security Monitoring
 
-### Security Metrics
+### Authentication Metrics
 
-Prometheus metrics for security monitoring:
+Track authentication success and failure rates:
 
-```
-# Authentication metrics
-verus_rpc_auth_failures_total{reason="invalid_token"} 5
-verus_rpc_auth_failures_total{reason="expired_token"} 2
-
-# Rate limiting metrics
-verus_rpc_rate_limit_hits_total{ip="192.168.1.100"} 10
-
-# Validation metrics
-verus_rpc_validation_errors_total{field="block_hash"} 3
-verus_rpc_validation_errors_total{field="txid"} 1
-```
-
-### Security Logging
-
-Structured logging for security events:
-
-```json
-{
-  "timestamp": "2024-12-06T15:30:00Z",
-  "level": "warn",
-  "event": "authentication_failure",
-  "ip": "192.168.1.100",
-  "reason": "invalid_token",
-  "user_agent": "curl/7.68.0"
+```rust
+// Authentication metrics
+pub struct AuthMetrics {
+    pub successful_auths: AtomicU64,
+    pub failed_auths: AtomicU64,
+    pub token_validations: AtomicU64,
+    pub permission_checks: AtomicU64,
 }
 ```
 
+### Security Event Logging
+
+Comprehensive security event logging:
+
+```rust
+// Security event types
+pub enum SecurityEvent {
+    AuthenticationSuccess { user_id: String, client_ip: String },
+    AuthenticationFailure { client_ip: String, reason: String },
+    AuthorizationFailure { user_id: String, method: String },
+    RateLimitExceeded { client_ip: String },
+    InvalidParameters { method: String, client_ip: String },
+}
+```
+
+## 🛡️ Security Best Practices
+
+### Token Management
+
+1. **Secure Token Storage**: Tokens are never logged or stored in plain text
+2. **Token Expiration**: Configurable token expiration with automatic renewal
+3. **Token Validation**: Comprehensive token validation including signature, expiration, and audience
+4. **Token Rotation**: Support for token rotation and revocation
+
+### Input Sanitization
+
+1. **Parameter Validation**: All input parameters are validated against defined rules
+2. **Type Safety**: Strong typing with Rust's type system prevents type-related vulnerabilities
+3. **Length Limits**: Configurable length limits prevent buffer overflow attacks
+4. **Pattern Validation**: Regex pattern validation for format-specific parameters
+
+### Access Control
+
+1. **Method Allowlist**: Only explicitly allowed RPC methods are processed
+2. **Permission-Based Access**: Method-specific permission requirements
+3. **IP Restrictions**: Configurable IP address restrictions
+4. **Development Mode**: Secure development mode for testing
+
+### Error Handling
+
+1. **Secure Error Messages**: No sensitive information in error responses
+2. **Graceful Degradation**: Proper handling of authentication and authorization failures
+3. **Comprehensive Logging**: Security events are logged for monitoring
+4. **Rate Limiting**: Protection against abuse and DoS attacks
+
 ## 🔧 Security Configuration
 
-### Environment-Specific Settings
+### Complete Security Configuration
 
-#### Development
-```toml
-[security]
-development_mode = true
-enable_security_headers = true
-cors_origins = ["*"]
-```
-
-#### Production
-```toml
-[security]
-development_mode = false
-enable_security_headers = true
-cors_origins = ["https://yourdomain.com"]
-```
-
-### Security Headers Configuration
-
-```toml
-[security]
-enable_security_headers = true
-enable_custom_headers = false
-custom_headers = [
-  "X-Custom-Security: enabled"
-]
-```
-
-## 🚀 Security Best Practices
-
-### 1. **Use Strong JWT Secrets**
-```toml
-# Use cryptographically secure random strings
-jwt_secret = "your-32-character-cryptographically-secure-secret"
-```
-
-### 2. **Enable All Security Features**
 ```toml
 [security]
 development_mode = false
 enable_security_headers = true
 enable_custom_headers = true
-```
+allowed_methods = ["getinfo", "getblock", "z_importviewingkey"]
 
-### 3. **Configure Rate Limiting**
-```toml
+[jwt]
+secret_key = "your-32-character-secret-key-here"
+expiration_seconds = 3600
+issuer = "verus-rpc-server"
+audience = "verus-clients"
+
 [rate_limit]
 enabled = true
-requests_per_minute = 100  # Adjust based on your needs
+requests_per_minute = 100
 burst_size = 20
+
+[cors]
+enabled = true
+allowed_origins = ["https://your-domain.com"]
+allowed_methods = ["POST"]
+allowed_headers = ["Authorization", "Content-Type"]
 ```
 
-### 4. **Use HTTPS in Production**
-- Deploy behind a reverse proxy with SSL/TLS termination
-- Never expose the server directly to the internet
+### Environment-Specific Configuration
 
-### 5. **Monitor Security Events**
-- Set up alerts for authentication failures
-- Monitor rate limit violations
-- Track validation errors
+#### Development Environment
+```toml
+[security]
+development_mode = true  # Disables authentication for development
 
-### 6. **Regular Security Updates**
-- Keep dependencies updated
-- Monitor security advisories
-- Regular security audits
+[rate_limit]
+requests_per_minute = 1000  # Higher limits for development
+```
+
+#### Production Environment
+```toml
+[security]
+development_mode = false
+enable_security_headers = true
+
+[rate_limit]
+requests_per_minute = 100  # Stricter limits for production
+```
 
 ## 🔗 Related Documentation
 
-- [Authentication](./authentication.md) - Detailed authentication guide
-- [Security Headers](./security-headers.md) - Security headers implementation
-- [Input Validation](./input-validation.md) - Input validation details
-- [Rate Limiting](./rate-limiting.md) - Rate limiting configuration
-- [Security Best Practices](./best-practices.md) - Production security guidelines
+- [System Architecture](../architecture/system-architecture.md) - Overall system architecture
+- [Application Services](../architecture/application-services.md) - Application services security
+- [API Documentation](../api/) - API security considerations
+- [Development Guide](../development/) - Security development guidelines

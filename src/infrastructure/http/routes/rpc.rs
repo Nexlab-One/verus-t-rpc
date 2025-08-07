@@ -30,6 +30,8 @@ impl RpcRoutes {
             .and(warp::body::content_length_limit(config.server.max_request_size as u64))
             .and(warp::body::json())
             .and(warp::header::<String>("x-forwarded-for"))
+            .and(warp::header::optional::<String>("authorization"))
+            .and(warp::header::optional::<String>("user-agent"))
             .and(with_rpc_use_case(rpc_use_case))
             .and(with_config(config))
             .and(with_cache_middleware(cache_middleware))

@@ -89,6 +89,7 @@ pub mod fixtures {
         ClientInfo {
             ip_address: "127.0.0.1".to_string(),
             user_agent: Some("test-client/1.0".to_string()),
+            auth_token: None,
             request_id: Uuid::new_v4().to_string(),
         }
     }

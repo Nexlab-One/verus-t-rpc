@@ -24,6 +24,8 @@ use warp::{Reply};
 pub async fn handle_rpc_request(
     request: JsonRpcRequest,
     client_ip: String,
+    auth_header: Option<String>,
+    user_agent_header: Option<String>,
     rpc_use_case: Arc<ProcessRpcRequestUseCase>,
     config: AppConfig,
     cache_middleware: Arc<CacheMiddleware>,
@@ -33,11 +35,13 @@ pub async fn handle_rpc_request(
     let validated_client_ip = extract_and_validate_client_ip(&client_ip, &config);
     
     // Create request context
-    let context = RequestContext::new(
+    let mut context = RequestContext::new(
         validated_client_ip.clone(),
         request.method.clone(),
         request.params.clone(),
     );
+    if let Some(ua) = user_agent_header { context = context.with_user_agent(ua); }
+    if let Some(auth) = auth_header { context = context.with_auth_token(auth); }
 
     // Log request if enabled
     if config.security.enable_request_logging {
@@ -149,6 +153,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -171,6 +177,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -193,6 +201,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -215,6 +225,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -240,6 +252,8 @@ mod tests {
             let result = handle_rpc_request(
                 request,
                 client_ip.to_string(),
+                None,
+                None,
                 rpc_use_case,
                 config,
                 cache_middleware,
@@ -268,6 +282,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -291,6 +307,8 @@ mod tests {
             let result = handle_rpc_request(
                 request,
                 client_ip.to_string(),
+                None,
+                None,
                 rpc_use_case,
                 config,
                 cache_middleware,
@@ -314,6 +332,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -336,6 +356,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -358,6 +380,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -380,6 +404,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -403,6 +429,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -425,6 +453,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -447,6 +477,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -469,6 +501,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,
@@ -491,6 +525,8 @@ mod tests {
         let result = handle_rpc_request(
             request,
             client_ip.to_string(),
+            None,
+            None,
             rpc_use_case,
             config,
             cache_middleware,

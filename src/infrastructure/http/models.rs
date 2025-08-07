@@ -81,6 +81,9 @@ pub struct RequestContext {
     
     /// Request parameters (for logging)
     pub params: Option<Value>,
+
+    /// Authorization bearer token if provided
+    pub auth_token: Option<String>,
 }
 
 /// HTTP rate limit information (infrastructure concern)
@@ -199,12 +202,19 @@ impl RequestContext {
             timestamp: chrono::Utc::now(),
             method,
             params,
+            auth_token: None,
         }
     }
     
     /// Set user agent
     pub fn with_user_agent(mut self, user_agent: String) -> Self {
         self.user_agent = Some(user_agent);
+        self
+    }
+
+    /// Set authorization token
+    pub fn with_auth_token(mut self, auth_token: String) -> Self {
+        self.auth_token = Some(auth_token);
         self
     }
 }

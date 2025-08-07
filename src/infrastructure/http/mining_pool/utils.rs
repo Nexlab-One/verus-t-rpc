@@ -130,6 +130,7 @@ mod tests {
             client_info: crate::domain::rpc::ClientInfo {
                 ip_address: "127.0.0.1".to_string(),
                 user_agent: Some("test_agent".to_string()),
+                auth_token: None,
                 timestamp: chrono::Utc::now(),
             },
         }

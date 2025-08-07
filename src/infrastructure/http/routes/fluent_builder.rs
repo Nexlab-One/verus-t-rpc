@@ -96,6 +96,8 @@ impl FluentRouteBuilder {
             .and(warp::body::content_length_limit(self.config.server.max_request_size as u64))
             .and(warp::body::json())
             .and(warp::header::<String>("x-forwarded-for"))
+            .and(warp::header::optional::<String>("authorization"))
+            .and(warp::header::optional::<String>("user-agent"))
             .and(with_rpc_use_case(rpc_use_case.clone()))
             .and(with_config(self.config.clone()))
             .and(with_cache_middleware(cache_middleware.clone()))

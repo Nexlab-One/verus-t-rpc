@@ -19,6 +19,7 @@ impl ModelConverter {
         let client_info = ClientInfo {
             ip_address: context.client_ip.clone(),
             user_agent: context.user_agent.clone(),
+            auth_token: context.auth_token.clone(),
             timestamp: context.timestamp,
         };
 
@@ -77,7 +78,7 @@ impl ModelConverter {
         SecurityContext {
             client_ip: request_context.client_ip.clone(),
             user_agent: request_context.user_agent.clone(),
-            auth_token,
+            auth_token: auth_token.or_else(|| request_context.auth_token.clone()),
             user_permissions,
             timestamp: request_context.timestamp,
             request_id: request_context.request_id.clone(),
@@ -107,6 +108,7 @@ mod tests {
             timestamp: Utc::now(),
             method: "getinfo".to_string(),
             params: Some(serde_json::json!([])),
+            auth_token: None,
         };
 
         let result = ModelConverter::to_domain_request(&infra_request, &context);
@@ -210,6 +212,7 @@ mod tests {
             timestamp: Utc::now(),
             method: "getinfo".to_string(),
             params: Some(serde_json::json!([])),
+            auth_token: None,
         };
 
         let auth_token = Some("jwt-token".to_string());

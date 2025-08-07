@@ -7,19 +7,33 @@ Overview of the Verus RPC Server's system architecture, design principles, and c
 The Verus RPC Server follows **Clean Architecture** principles with a **layered design** that promotes separation of concerns, testability, and maintainability.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        HTTP Layer                               │
-│                    (Warp Framework)                             │
-├─────────────────────────────────────────────────────────────────┤
-│                    Infrastructure Layer                         │
-│  HTTP Server | Cache Adapter | Monitoring | External Services   │
-├─────────────────────────────────────────────────────────────────┤
-│                    Application Layer                            │
-│  Use Cases | Services | Middleware | Validation | Authentication│
-├─────────────────────────────────────────────────────────────────┤
-│                      Domain Layer                               │
-│  Entities | Value Objects | Business Rules | Domain Services    │
-└─────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────┐
+│                        HTTP Layer                                 │
+│                    (Warp Framework)                               │
+│  Headers: Authorization, User-Agent, X-Forwarded-For              │
+├───────────────────────────────────────────────────────────────────┤
+│                    Infrastructure Layer                           │
+│  HTTP Server | Cache Adapter | Monitoring | External Services     │
+├───────────────────────────────────────────────────────────────────┤
+│                    Application Layer                              │
+│  Use Cases | Services | Middleware | Validation | Authentication  │
+│  ┌──────────────────────────────────────────────────────────────┐ │
+│  │              Application Services                            │ │
+│  │  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐ │ │
+│  │  │ RPC Service │ │Metrics Svc  │ │     RPC Submodules      │ │ │
+│  │  │             │ │             │ │ ┌─────────┐ ┌─────────┐ │ │ │
+│  │  │ • Process   │ │ • Collect   │ │ │ Token   │ │ Param   │ │ │ │
+│  │  │   Requests  │ │   Metrics   │ │ │ Extract │ │ Valid   │ │ │ │
+│  │  │ • Auth      │ │ • Monitor   │ │ └─────────┘ └─────────┘ │ │ │
+│  │  │   Validation│ │   Health    │ │ ┌─────────┐             │ │ │
+│  │  │ • Security  │ │ • Report    │ │ │ Method  │             │ │ │
+│  │  │   Context   │ │   Status    │ │ │ Registry│             │ │ │
+│  │  └─────────────┘ └─────────────┘ └─────────────────────────┘ │ │
+│  └──────────────────────────────────────────────────────────────┘ │
+├───────────────────────────────────────────────────────────────────┤
+│                      Domain Layer                                 │
+│  Entities | Value Objects | Business Rules | Domain Services      │
+└───────────────────────────────────────────────────────────────────┘
 ```
 
 ## 🎯 Design Principles
@@ -54,11 +68,12 @@ The Verus RPC Server follows **Clean Architecture** principles with a **layered 
 - **Request Routing**: Route requests to appropriate handlers (`/`, `/health`, `/metrics`, `/metrics/prometheus`, `/pool/*`)
 - **Response Formatting**: Format responses as JSON-RPC 2.0 with security headers
 - **Middleware Integration**: Apply security, rate limiting, caching, validation
+- **Header Processing**: Extract and validate `Authorization`, `User-Agent`, and `X-Forwarded-For` headers
 
 **Key Files**:
 - `src/infrastructure/http/server.rs` - Main HTTP server
-- `src/infrastructure/http/routes/*` - Route definitions
-- `src/infrastructure/http/handlers/*` - Request handlers
+- `src/infrastructure/http/routes/*` - Route definitions with header extraction
+- `src/infrastructure/http/handlers/*` - Request handlers with auth token processing
 - `src/infrastructure/http/processors/*` - Request processing (validation, rate limit, cache)
 - `src/infrastructure/http/responses.rs` - Response formatting
 - `src/infrastructure/http/utils.rs` - HTTP utilities
@@ -85,16 +100,50 @@ The Verus RPC Server follows **Clean Architecture** principles with a **layered 
 
 **Components**:
 - **Use Cases**: Application-specific business logic
-- **Services**: Cross-cutting concerns
+- **Services**: Cross-cutting concerns with modular design
 - **Middleware**: Request/response processing
 - **Validation**: Input validation and sanitization
-- **Authentication**: JWT token validation
+- **Authentication**: HTTP header-based JWT token validation
 
 **Key Files**:
 - `src/application/use_cases/` - Business use cases
-- `src/application/services/` - Application services
+- `src/application/services/` - Modular application services
 - `src/middleware/` - Request processing middleware
 - `src/application/validation/` - Input validation
+
+#### Application Services Architecture
+
+The application services layer has been refactored for better modularity and maintainability:
+
+```
+src/application/services/
+├── mod.rs                    # Public API exports
+├── rpc_service.rs            # Main RPC orchestration service
+├── metrics_service.rs        # Metrics collection service
+└── rpc/                      # RPC-specific submodules
+    ├── mod.rs                # RPC module exports
+    ├── token_extraction.rs   # HTTP header token extraction
+    ├── parameter_validation.rs # Parameter validation logic
+    └── method_registry.rs    # RPC method definitions and rules
+```
+
+**Service Responsibilities**:
+
+- **RpcService**: Main orchestrator for RPC requests
+  - Processes authentication tokens from HTTP headers
+  - Validates security context and permissions
+  - Coordinates with external RPC adapters
+  - Manages request lifecycle
+
+- **MetricsService**: Application metrics collection
+  - Records request success/failure rates
+  - Tracks performance metrics
+  - Provides health status information
+
+- **RPC Submodules**: Specialized functionality
+  - **Token Extraction**: HTTP header-based authentication
+  - **Parameter Validation**: Input sanitization and validation
+  - **Method Registry**: RPC method definitions and security rules
 
 ### Domain Layer
 
@@ -117,59 +166,135 @@ The Verus RPC Server follows **Clean Architecture** principles with a **layered 
 ### Request Processing Flow
 
 ```
-1. HTTP Request
+1. HTTP Request (with Authorization header)
    ↓
-2. Warp Router
+2. Warp Router (extracts headers)
    ↓
 3. Middleware Chain
    ├─ Rate Limiting
-   ├─ Authentication
+   ├─ Header Validation
    ├─ Security Headers
    └─ Caching
    ↓
-4. Request Handler
+4. Request Handler (processes auth token)
    ↓
 5. Use Case Execution
    ↓
-6. Domain Logic
+6. Application Services
+   ├─ RPC Service (validates auth, creates security context)
+   ├─ Token Extraction (from HTTP headers)
+   ├─ Parameter Validation
+   └─ Method Registry (lookup and validation)
    ↓
-7. Infrastructure Adapters
+7. Domain Logic
+   ↓
+8. Infrastructure Adapters
    ├─ RPC Adapter (Verus daemon)
    └─ Cache Adapter (Redis)
    ↓
-8. Response Formatting
+9. Response Formatting
    ↓
-9. HTTP Response
+10. HTTP Response
+```
+
+### Authentication Flow
+
+```
+1. HTTP Request with Authorization Header
+   ↓
+2. Header Extraction in Route
+   ├─ Authorization: Bearer <token>
+   ├─ User-Agent: <client_info>
+   └─ X-Forwarded-For: <client_ip>
+   ↓
+3. RequestContext Creation
+   ├─ client_ip: validated IP address
+   ├─ user_agent: from User-Agent header
+   ├─ auth_token: from Authorization header
+   └─ timestamp: request timestamp
+   ↓
+4. Domain Model Conversion
+   ├─ ClientInfo with auth_token
+   └─ RpcRequest with client context
+   ↓
+5. RpcService Processing
+   ├─ Extract auth_token from client_info
+   ├─ Validate token with AuthenticationAdapter
+   ├─ Create SecurityContext with permissions
+   └─ Validate request against security policy
+   ↓
+6. Security Validation
+   ├─ Check authentication requirements
+   ├─ Validate user permissions
+   ├─ Apply method-specific rules
+   └─ Enforce IP restrictions
 ```
 
 ### Detailed Flow Example
 
-#### 1. **Request Reception**
+#### 1. **Request Reception with Headers**
 ```rust
 // src/infrastructure/http/handlers/rpc.rs
 pub async fn handle_rpc_request(
     request: JsonRpcRequest,
     client_ip: String,
+    auth_header: Option<String>,        // Authorization header
+    user_agent_header: Option<String>,  // User-Agent header
     rpc_use_case: Arc<ProcessRpcRequestUseCase>,
     config: AppConfig,
     cache_middleware: Arc<CacheMiddleware>,
     rate_limit_middleware: Arc<RateLimitMiddleware>,
 ) -> Result<impl Reply, warp::reject::Rejection> {
-    // Request processing with middleware chain
+    // Create RequestContext with auth token
+    let mut context = RequestContext::new(
+        validated_client_ip.clone(),
+        request.method.clone(),
+        request.params.clone(),
+    );
+    if let Some(ua) = user_agent_header {
+        context = context.with_user_agent(ua);
+    }
+    if let Some(auth) = auth_header {
+        context = context.with_auth_token(auth);
+    }
+    // Process request...
 }
 ```
 
-#### 2. **Middleware Processing**
+#### 2. **Application Service Processing**
 ```rust
-// src/infrastructure/http/processors/base.rs
-pub async fn check_rate_limit(
-    client_ip: &str,
-    context: &RequestContext,
-    request: &JsonRpcRequest,
-    rate_limit_middleware: &Arc<RateLimitMiddleware>,
-    config: &AppConfig,
-) -> Result<(), warp::reply::WithStatus<Box<dyn warp::Reply>>> {
-    // Rate limiting validation
+// src/application/services/rpc_service.rs
+pub async fn process_request(&self, request: RpcRequest) -> AppResult<RpcResponse> {
+    // Extract auth token from HTTP headers (now in client_info)
+    let auth_token: Option<String> = request.client_info.auth_token.clone();
+    
+    // Validate token and get user permissions
+    let user_permissions = if let Some(token) = &auth_token {
+        match self.auth_adapter.validate_token(token).await {
+            Ok(permissions) => permissions,
+            Err(e) => {
+                warn!("Authentication failed: {}", e);
+                vec![]
+            }
+        }
+    } else {
+        vec![]
+    };
+
+    // Create security context with auth token
+    let security_context = SecurityContext {
+        client_ip: request.client_info.ip_address.clone(),
+        user_agent: request.client_info.user_agent.clone(),
+        auth_token,
+        user_permissions,
+        timestamp: request.client_info.timestamp,
+        request_id: request.client_info.timestamp.timestamp_millis().to_string(),
+        development_mode: self._config.security.development_mode,
+    };
+
+    // Validate request against security policy
+    self.security_validator.validate_request(&request.method, &security_context)?;
+    // Continue processing...
 }
 ```
 
@@ -178,18 +303,27 @@ pub async fn check_rate_limit(
 // src/application/use_cases.rs
 pub async fn execute(
     &self,
-    request: RpcRequest,
+    request: RpcRequest,  // Now includes auth_token in client_info
 ) -> Result<RpcResponse, AppError> {
     // Business logic with domain services
+    let result = self.rpc_service.process_request(request).await;
+    
+    // Record metrics
+    self.metrics_service.record_request(result.is_ok());
+    
+    result
 }
 ```
 
 #### 4. **Domain Logic**
 ```rust
-// src/application/services.rs
+// src/application/services/rpc_service.rs
 pub struct RpcService {
-    config: Arc<AppConfig>,
+    _config: Arc<AppConfig>,
     security_validator: Arc<SecurityValidator>,
+    external_rpc_adapter: Arc<crate::infrastructure::adapters::ExternalRpcAdapter>,
+    auth_adapter: Arc<crate::infrastructure::adapters::AuthenticationAdapter>,
+    comprehensive_validator: Arc<ComprehensiveValidator>,
 }
 ```
 
@@ -219,7 +353,19 @@ pub fn create_rpc_route(
     cache_middleware: Arc<CacheMiddleware>,
     rate_limit_middleware: Arc<RateLimitMiddleware>,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
-    // Route with middleware chain
+    // Route with middleware chain and header extraction
+    warp::path::end()
+        .and(warp::post())
+        .and(warp::body::content_length_limit(config.server.max_request_size as u64))
+        .and(warp::body::json())
+        .and(warp::header::<String>("x-forwarded-for"))
+        .and(warp::header::optional::<String>("authorization"))
+        .and(warp::header::optional::<String>("user-agent"))
+        .and(with_rpc_use_case(rpc_use_case))
+        .and(with_config(config))
+        .and(with_cache_middleware(cache_middleware))
+        .and(with_rate_limit_middleware(rate_limit_middleware))
+        .and_then(handle_rpc_request)
 }
 ```
 
@@ -266,14 +412,20 @@ pub struct AppConfig {
 
 1. **HTTP Security Headers**: Applied at response level
 2. **Rate Limiting**: IP-based request throttling
-3. **Authentication**: JWT token validation
+3. **Authentication**: HTTP header-based JWT token validation
 4. **Input Validation**: Parameter sanitization
 5. **Method Allowlist**: Restricted RPC method access
 
 ### Security Flow
 
 ```
-Request → Rate Limiting → Authentication → Validation → Processing → Security Headers → Response
+Request → Header Extraction → Rate Limiting → Authentication → Validation → Processing → Security Headers → Response
+```
+
+### Authentication Flow
+
+```
+Authorization Header → RequestContext → ClientInfo → SecurityContext → Token Validation → Permission Check → Request Processing
 ```
 
 ## 📊 Monitoring & Observability
@@ -284,6 +436,7 @@ Request → Rate Limiting → Authentication → Validation → Processing → S
 - **Performance Metrics**: Response times, throughput
 - **Error Metrics**: Error types and frequencies
 - **Business Metrics**: Method usage, cache hit rates
+- **Authentication Metrics**: Token validation success/failure rates
 
 ### Logging Strategy
 
@@ -376,6 +529,12 @@ port = 8080
 [security]
 development_mode = false
 enable_security_headers = true
+
+[jwt]
+secret_key = "your-32-character-secret-key-here"
+expiration_seconds = 3600
+issuer = "verus-rpc-server"
+audience = "verus-clients"
 ```
 
 ### Configuration Validation
@@ -386,6 +545,7 @@ enable_security_headers = true
 
 ## 🔗 Related Documentation
 
+- [Application Services](./application-services.md) - Detailed application services architecture
 - [Clean Architecture](./clean-architecture.md) - Detailed clean architecture principles
 - [Component Design](./component-design.md) - Individual component documentation
 - [Data Flow](./data-flow.md) - Detailed data flow diagrams
