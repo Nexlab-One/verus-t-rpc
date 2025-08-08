@@ -16,8 +16,15 @@ src/application/services/
 └── rpc/                      # RPC-specific submodules
     ├── mod.rs                # RPC module exports
     ├── token_extraction.rs   # HTTP header token extraction
-    ├── parameter_validation.rs # Parameter validation logic
-    └── method_registry.rs    # RPC method definitions and rules
+    └── parameter_validation.rs # Parameter validation logic
+
+# Domain validation (method registry, rules, and definitions) lives under:
+src/domain/validation/
+├── mod.rs
+├── types.rs                  # RpcMethodDefinition, ParameterValidationRule, ParameterType, ValidationConstraint, SecurityLevel
+├── registry.rs               # MethodRegistry (lookup and parameter validation)
+├── domain_validator.rs       # DomainValidator facade
+└── methods/                  # Modular method registrations (core, blocks, transactions, write, identity, currency, utility, additional)
 ```
 
 ## Service Components
@@ -140,32 +147,39 @@ pub fn validate_parameter_value(rule: &ParameterRule, value: &Value) -> AppResul
 - `MaxValue`: Maximum numeric value
 - `Custom`: Custom validation rules
 
-### Method Registry
+### Domain Validation (Method Registry)
 
 **Purpose**: Define and manage RPC method definitions, security rules, and validation requirements.
 
-**Location**: `src/application/services/rpc/method_registry.rs`
+**Location**: `src/domain/validation/registry.rs`
 
 **Functionality**:
-- Centralized RPC method definitions
-- Security rules and permission requirements
-- Parameter validation rules
-- Method metadata and descriptions
+- Centralized RPC method definitions (category modules under `src/domain/validation/methods/*`)
+- Security levels and permission requirements
+- Parameter validation rules and constraints
+- Method metadata and enabled/disabled flags
 
 **Key Functions**:
 ```rust
-/// Get method information by name
-pub fn get_method_info(method_name: &str) -> Option<RpcMethod>
+// MethodRegistry
+pub fn get_method(&self, name: &str) -> Option<&RpcMethodDefinition>
+pub fn is_method_allowed(&self, name: &str) -> bool
+pub fn validate_method_parameters(&self, method_name: &str, params: &[Box<RawValue>]) -> AppResult<()>
+
+// DomainValidator facade
+pub fn validate_method_call(&self, method: &str, params: &Option<Value>) -> AppResult<()>
 ```
 
 **Method Definition Structure**:
 ```rust
-pub struct RpcMethod {
+pub struct RpcMethodDefinition {
     pub name: String,
     pub description: String,
     pub read_only: bool,
     pub required_permissions: Vec<String>,
-    pub parameter_rules: Vec<ParameterRule>,
+    pub parameter_rules: Vec<ParameterValidationRule>,
+    pub security_level: SecurityLevel,
+    pub enabled: bool,
 }
 ```
 

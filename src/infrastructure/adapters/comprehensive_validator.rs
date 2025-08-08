@@ -1,18 +1,13 @@
-//! Comprehensive validator adapter for RPC method validation
-//! 
-//! This adapter integrates the comprehensive validation logic from the original
-//! validation system into the clean architecture, providing forward compatibility
-//! for future Rust daemon integration.
-
-use crate::shared::error::{AppError, AppResult};
-use serde_json::{Value, value::RawValue};
-use std::collections::HashMap;
-
 /// Comprehensive method validator for RPC requests
 /// 
 /// This validator provides detailed parameter validation for all Verus RPC methods,
 /// ensuring type safety and parameter constraints are enforced before requests
 /// are forwarded to the daemon.
+
+use crate::shared::error::{AppError, AppResult};
+use serde_json::{Value, value::RawValue};
+use std::collections::HashMap;
+
 pub struct ComprehensiveValidator {
     /// Cache for compiled validation rules
     validation_cache: HashMap<String, ValidationRule>,
@@ -40,7 +35,7 @@ enum ParameterType {
 }
 
 impl ComprehensiveValidator {
-    /// Create a new comprehensive validator
+    /// Create a new validator
     pub fn new() -> Self {
         let mut validator = Self {
             validation_cache: HashMap::new(),

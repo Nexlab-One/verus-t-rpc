@@ -243,82 +243,57 @@ custom_headers = [
 
 ## 🔍 Input Validation
 
-### Parameter Validation
+### Parameter Validation (Domain Layer)
 
-The server implements comprehensive parameter validation:
+The server implements comprehensive parameter validation in the domain layer (`src/domain/validation/`).
 
 #### Validation Rules
 ```rust
-pub struct ParameterRule {
+pub struct ParameterValidationRule {
     pub index: usize,
     pub name: String,
     pub param_type: ParameterType,
     pub required: bool,
-    pub constraints: Vec<Constraint>,
+    pub constraints: Vec<ValidationConstraint>,
+    pub default_value: Option<Value>,
 }
 ```
 
 #### Supported Constraints
-- **MinLength**: Minimum string length validation
-- **MaxLength**: Maximum string length validation
-- **Pattern**: Regex pattern matching
-- **MinValue**: Minimum numeric value
-- **MaxValue**: Maximum numeric value
-- **Custom**: Custom validation rules
+- **MinLength**
+- **MaxLength**
+- **Pattern**
+- **MinValue**
+- **MaxValue**
+- **Enum**
+- **Custom**
 
 #### Example Validation
 ```rust
-// Hash parameter validation
-ParameterRule {
+// Hash parameter validation (64-hex)
+ParameterValidationRule {
     index: 0,
     name: "hash".to_string(),
     param_type: ParameterType::String,
     required: true,
-    constraints: vec![Constraint::MinLength(64)],
+    constraints: vec![ValidationConstraint::MinLength(64), ValidationConstraint::MaxLength(64)],
+    default_value: None,
 }
 
-// Block type validation
-ParameterRule {
-    index: 1,
+// Optional enum example
+ParameterValidationRule {
+    index: 0,
     name: "type".to_string(),
     param_type: ParameterType::String,
     required: false,
-    constraints: vec![Constraint::Custom("sprout|sapling|orchard".to_string())],
+    constraints: vec![ValidationConstraint::Enum(vec!["sprout".into(), "sapling".into(), "orchard".into()])],
+    default_value: None,
 }
 ```
 
 ### Method Allowlist
 
-Only explicitly allowed RPC methods are processed:
-
-```rust
-// Supported methods with security rules
-let method_registry = [
-    ("getinfo", RpcMethod {
-        name: "getinfo".to_string(),
-        description: "Get blockchain information".to_string(),
-        read_only: true,
-        required_permissions: vec!["read".to_string()],
-        parameter_rules: vec![],
-    }),
-    ("getblock", RpcMethod {
-        name: "getblock".to_string(),
-        description: "Get block information".to_string(),
-        read_only: true,
-        required_permissions: vec!["read".to_string()],
-        parameter_rules: vec![
-            ParameterRule {
-                index: 0,
-                name: "hash".to_string(),
-                param_type: ParameterType::String,
-                required: true,
-                constraints: vec![Constraint::MinLength(64)],
-            },
-        ],
-    }),
-    // ... other methods
-];
-```
+Only explicitly allowed RPC methods are processed via the domain registry (`MethodRegistry`).
 
 ## 🔒 Error Handling
 
@@ -354,13 +329,7 @@ The server implements secure error handling to prevent information disclosure:
 Comprehensive error logging for security monitoring:
 
 ```rust
-// Security event logging
-warn!(
-    request_id = %context.request_id,
-    client_ip = %context.client_ip,
-    method = %request.method,
-    "Authentication failed: invalid token"
-);
+warn!(request_id = %context.request_id, client_ip = %context.client_ip, method = %request.method, "Authentication failed: invalid token");
 ```
 
 ## 🔍 Security Monitoring

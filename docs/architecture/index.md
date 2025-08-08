@@ -17,7 +17,7 @@ The Rust Verus RPC Server follows a **Clean Architecture** pattern with clear se
 - **HTTP Layer**: Warp framework handling HTTP requests/responses with header extraction
 - **Infrastructure Layer**: External integrations, caching, monitoring
 - **Application Layer**: Use cases, business logic orchestration with modular services
-- **Domain Layer**: Core business models and validation
+- **Domain Layer**: Core business models and domain validation (`src/domain/validation`)
 
 ## 🔗 Quick Navigation
 

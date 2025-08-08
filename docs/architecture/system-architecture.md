@@ -25,9 +25,10 @@ The Verus RPC Server follows **Clean Architecture** principles with a **layered 
 │  │  │ • Process   │ │ • Collect   │ │ │ Token   │ │ Param   │ │ │ │
 │  │  │   Requests  │ │   Metrics   │ │ │ Extract │ │ Valid   │ │ │ │
 │  │  │ • Auth      │ │ • Monitor   │ │ └─────────┘ └─────────┘ │ │ │
-│  │  │   Validation│ │   Health    │ │ ┌─────────┐             │ │ │
-│  │  │ • Security  │ │ • Report    │ │ │ Method  │             │ │ │
-│  │  │   Context   │ │   Status    │ │ │ Registry│             │ │ │
+│  │  │   Validation│ │   Health    │ │ ┌───────────┐           │ │ │
+│  │  │ • Security  │ │ • Report    │ │ │ Domain    │           │ │ │
+│  │  │   Context   │ │   Status    │ │ │Validation │           │ │ │
+│  │  │             │ │             │ │ └───────────┘           │ │ │
 │  │  └─────────────┘ └─────────────┘ └─────────────────────────┘ │ │
 │  └──────────────────────────────────────────────────────────────┘ │
 ├───────────────────────────────────────────────────────────────────┤
@@ -109,7 +110,7 @@ The Verus RPC Server follows **Clean Architecture** principles with a **layered 
 - `src/application/use_cases/` - Business use cases
 - `src/application/services/` - Modular application services
 - `src/middleware/` - Request processing middleware
-- `src/application/validation/` - Input validation
+- `src/domain/validation/` - Domain method registry and parameter validation
 
 #### Application Services Architecture
 
@@ -183,8 +184,8 @@ src/application/services/
 6. Application Services
    ├─ RPC Service (validates auth, creates security context)
    ├─ Token Extraction (from HTTP headers)
-   ├─ Parameter Validation
-   └─ Method Registry (lookup and validation)
+   ├─ Parameter Validation (domain validation)
+   └─ Method Registry (domain layer)
    ↓
 7. Domain Logic
    ↓
