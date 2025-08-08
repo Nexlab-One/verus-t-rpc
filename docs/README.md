@@ -18,6 +18,7 @@ Documentation for the Rust Verus RPC Server.
 ### 🔌 [API Reference](./api/)
 - [RPC Methods](./api/rpc-methods.md)
 - [Request/Response Format](./api/request-response.md)
+- [Payments API](./api/payments.md)
 
 ### 🛡️ [Security](./security/)
 - [Security Overview](./security/security-overview.md)

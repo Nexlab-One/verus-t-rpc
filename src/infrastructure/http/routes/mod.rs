@@ -11,6 +11,7 @@ pub mod rpc;
 pub mod health;
 pub mod metrics;
 pub mod mining_pool;
+pub mod payments;
 
 pub use builder::RouteBuilder;
 pub use config::{RouteConfig, RpcRouteConfig, HealthRouteConfig, MetricsRouteConfig, MiningPoolRouteConfig};
@@ -20,3 +21,4 @@ pub use rpc::RpcRoutes;
 pub use health::HealthRoutes;
 pub use metrics::MetricsRoutes;
 pub use mining_pool::MiningPoolRoutes;
+pub use payments::PaymentsRoutes;

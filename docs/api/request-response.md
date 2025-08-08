@@ -10,6 +10,9 @@ The server provides a JSON-RPC 2.0 compliant API with the following endpoints:
 - `GET /health` – Health check (JSON)
 - `GET /metrics` – Metrics (JSON)
 - `GET /metrics/prometheus` – Prometheus exposition format (text/plain)
+- `POST /payments/request` – Request a payment quote and shielded address
+- `POST /payments/submit` – Submit raw transaction hex for your payment
+- `GET /payments/status/{payment_id}` – Check payment status and obtain tokens
 
 ## Request Format
 

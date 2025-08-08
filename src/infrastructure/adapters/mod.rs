@@ -7,6 +7,8 @@ pub mod external_rpc;
 pub mod monitoring;
 pub mod token_issuer;
 pub mod mining_pool;
+pub mod payments_store;
+pub mod revocation_store;
 
 pub use authentication::AuthenticationAdapter;
 pub use cache::{CacheAdapter, CacheConfig, CacheEntry, CacheStats};
@@ -22,3 +24,5 @@ pub use mining_pool::{
     MiningPoolClient, PoolShare, PoolValidationResponse, PoolShareRequest,
     CircuitBreaker, CircuitBreakerState
 }; 
+pub use payments_store::PaymentsStore;
+pub use revocation_store::RevocationStore;

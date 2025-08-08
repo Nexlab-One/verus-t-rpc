@@ -47,12 +47,19 @@ pub struct JwtClaims {
 /// Adapter for authentication services
 pub struct AuthenticationAdapter {
     config: Arc<AppConfig>,
+    revocations: Option<Arc<crate::infrastructure::adapters::RevocationStore>>,
 }
 
 impl AuthenticationAdapter {
     /// Create a new authentication adapter
     pub fn new(config: Arc<AppConfig>) -> Self {
-        Self { config }
+        Self { config, revocations: None }
+    }
+
+    /// Inject revocation store
+    pub fn with_revocation_store(mut self, store: Arc<crate::infrastructure::adapters::RevocationStore>) -> Self {
+        self.revocations = Some(store);
+        self
     }
 
     /// Validate authentication token
@@ -106,6 +113,13 @@ impl AuthenticationAdapter {
         // Check if token is not yet valid
         if claims.nbf > current_time {
             return Err(crate::shared::error::AppError::Authentication("Token not yet valid".to_string()));
+        }
+
+        // Check revocation list
+        if let Some(store) = &self.revocations {
+            if store.is_revoked(&claims.jti).await.unwrap_or(false) {
+                return Err(crate::shared::error::AppError::Authentication("Token revoked".to_string()));
+            }
         }
 
         // Extract permissions from token

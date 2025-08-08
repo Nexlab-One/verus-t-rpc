@@ -24,6 +24,7 @@ pub struct ClientRateLimit {
 }
 
 /// Rate limiting state
+#[derive(Clone)]
 pub struct RateLimitState {
     clients: Arc<RwLock<HashMap<String, ClientRateLimit>>>,
     config: RateLimitConfig,

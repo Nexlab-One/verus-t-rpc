@@ -10,6 +10,9 @@ Reference of all supported Verus RPC methods with parameter specifications and u
 ### [Request-Response Format](request-response.md)
 Specification of the JSON-RPC 2.0 request and response formats used by the server.
 
+### [Payments API](payments.md)
+REST endpoints for shielded payments used to obtain RPC access tokens.
+
 ## 🔗 Quick Navigation
 
 - **Getting Started**: See [../getting-started.md](../getting-started.md) for quick setup

@@ -3,6 +3,7 @@
 pub mod rpc_service;
 pub mod rpc;
 pub mod metrics_service;
+pub mod payments_service;
 
 pub use rpc_service::RpcService;
 pub use metrics_service::MetricsService;

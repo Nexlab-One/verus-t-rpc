@@ -112,6 +112,57 @@ pub mod application {
     }
 
     #[tokio::test]
+    async fn test_payments_service_quote_and_submit_flow() {
+        use crate::application::services::payments_service::{PaymentsService, PaymentsConfig, PaymentQuoteRequest, PaymentSubmitRequest};
+        use crate::infrastructure::adapters::{ExternalRpcAdapter, PaymentsStore, TokenIssuerAdapter, RevocationStore};
+
+        // Prepare config
+        let mut app_config = config::test_config();
+        app_config.payments.enabled = true;
+        app_config.payments.address_types = vec!["orchard".into(), "sapling".into()];
+        app_config.payments.default_address_type = "orchard".into();
+        app_config.payments.min_confirmations = 1;
+        app_config.payments.session_ttl_minutes = 5;
+        app_config.payments.require_viewing_key = false;
+        app_config.payments.tiers = vec![crate::config::app_config::PaymentTierConfig {
+            id: "basic".into(), amount_vrsc: 1.0, description: None, permissions: vec!["read".into()]
+        }];
+
+        let app_config = Arc::new(app_config);
+
+        // Create adapters
+        let external = Arc::new(ExternalRpcAdapter::new(app_config.clone()));
+        let store = Arc::new(PaymentsStore::new(None));
+        let issuer = Arc::new(TokenIssuerAdapter::new(app_config.clone()));
+        let revocations = Arc::new(RevocationStore::new(None));
+
+        // Build service (config-driven tiers will map automatically)
+        let mut svc = PaymentsService::new(app_config.clone(), PaymentsConfig::default(), external.clone(), store.clone(), issuer.clone(), revocations.clone());
+        svc.refresh_from_app_config();
+
+        // Mock client info
+        let client_info = crate::tests::common::fixtures::test_client_info();
+
+        // We cannot reach a real verusd in unit tests, so just validate request shaping logic
+        // Ensure config reading and validation paths do not panic
+        let req = PaymentQuoteRequest { tier_id: "basic".into(), address_type: None };
+        // We expect a failure from RPC call; the important part is that pre-RPC validation passes
+        let quote_res = svc.create_quote(req, &client_info).await;
+        // Allow either RPC failure or success depending on environment, but not a validation error for tier or type
+        if let Err(e) = &quote_res {
+            // Should not be a validation error for unknown tier/type
+            let msg = e.to_string();
+            assert!(!msg.contains("unknown tier"));
+            assert!(!msg.contains("unsupported address type"));
+        }
+
+        // Submit path should validate hex and session
+        // Without a session, expect validation error: unknown payment_id
+        let submit_res = svc.submit_raw_transaction(PaymentSubmitRequest { payment_id: "nope".into(), rawtx_hex: "ab".repeat(60) }, &client_info).await;
+        assert!(submit_res.is_err());
+    }
+
+    #[tokio::test]
     async fn test_metrics_service_creation() {
         let service = MetricsService::new();
         let metrics = service.get_metrics();

@@ -59,6 +59,8 @@ impl RouteBuilder {
             config,
         );
 
+        // Payments routes are created in server where dependencies exist and then merged by caller.
+
         // Combine all routes
         rpc_route
             .or(health_route)

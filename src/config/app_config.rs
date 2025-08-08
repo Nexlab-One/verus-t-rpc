@@ -251,6 +251,43 @@ pub struct CacheConfig {
     pub max_size: usize,
 }
 
+/// Payment tier configuration
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct PaymentTierConfig {
+    #[validate(length(min = 1))]
+    pub id: String,
+    #[validate(range(min = 0.00000001))]
+    pub amount_vrsc: f64,
+    pub description: Option<String>,
+    pub permissions: Vec<String>,
+}
+
+/// Payments configuration
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct PaymentsAppConfig {
+    pub enabled: bool,
+    /// Allowed shielded address types: "orchard", "sapling"
+    pub address_types: Vec<String>,
+    /// Default address type
+    #[validate(length(min = 1))]
+    pub default_address_type: String,
+    /// Confirmations to issue provisional token
+    #[validate(range(min = 0, max = 10))]
+    pub min_confirmations: u32,
+    /// Quote/session TTL in minutes
+    #[validate(range(min = 1, max = 1440))]
+    pub session_ttl_minutes: u32,
+    /// Require viewing key presence to accept payments (view-only mode)
+    pub require_viewing_key: bool,
+    /// Optional list of viewing keys to import at startup
+    pub viewing_keys: Vec<String>,
+    /// Rescan mode for viewing key import: "yes", "no", or "whenkeyisnew"
+    #[validate(length(min = 2))]
+    pub viewing_key_rescan: String,
+    /// Configured payment tiers
+    pub tiers: Vec<PaymentTierConfig>,
+}
+
 /// Application configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
@@ -271,6 +308,8 @@ pub struct AppConfig {
     
     /// Cache configuration
     pub cache: CacheConfig,
+    /// Payments configuration
+    pub payments: PaymentsAppConfig,
 }
 
 impl Default for AppConfig {
@@ -324,6 +363,7 @@ impl Default for AppConfig {
                 structured: true,
             },
             cache: CacheConfig::default(),
+            payments: PaymentsAppConfig::default(),
         }
     }
 }
@@ -335,6 +375,35 @@ impl Default for CacheConfig {
             redis_url: "redis://127.0.0.1:6379".to_string(),
             default_ttl: 300, // 5 minutes
             max_size: 100 * 1024 * 1024, // 100MB
+        }
+    }
+}
+
+impl Default for PaymentsAppConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            address_types: vec!["orchard".to_string(), "sapling".to_string()],
+            default_address_type: "orchard".to_string(),
+            min_confirmations: 1,
+            session_ttl_minutes: 30,
+            require_viewing_key: false,
+            viewing_keys: vec![],
+            viewing_key_rescan: "whenkeyisnew".to_string(),
+            tiers: vec![
+                PaymentTierConfig {
+                    id: "basic".to_string(),
+                    amount_vrsc: 1.0,
+                    description: Some("Basic access".to_string()),
+                    permissions: vec!["read".to_string()],
+                },
+                PaymentTierConfig {
+                    id: "pro".to_string(),
+                    amount_vrsc: 5.0,
+                    description: Some("Pro access".to_string()),
+                    permissions: vec!["read".to_string(), "write".to_string()],
+                },
+            ],
         }
     }
 }
@@ -367,6 +436,7 @@ impl AppConfig {
         self.rate_limit.validate()?;
         self.logging.validate()?;
         self.cache.validate()?;
+        // payments uses only simple validations; nothing extra
         
         Ok(())
     }

@@ -2,6 +2,12 @@
 
 This guide explains how to set up Redis for the Verus RPC server's caching functionality.
 
+## Usage in Payments
+
+- Payment sessions are stored under keys `payments:{payment_id}` (JSON-serialized sessions)
+- Revoked JWT IDs are stored under keys `jwt:revoked:{jti}` with TTL
+- If Redis is unavailable, both stores fall back to in-memory, preserving functionality for a single instance
+
 ## Quick Start (No Authentication)
 
 ### 1. Install Redis

@@ -98,6 +98,35 @@ impl MetricsService {
 }
 ```
 
+### PaymentsService
+
+**Purpose**: Orchestrates payment quotes, transaction submission, verification, and JWT issuance for RPC access.
+
+**Location**: `src/application/services/payments_service.rs`
+
+**Responsibilities**:
+- Create quotes and provide shielded addresses (`/payments/request`)
+- Submit raw transactions and record txid (`/payments/submit`)
+- Verify payments via `z_viewtransaction` and confirmations via `getrawtransaction`
+- Issue provisional and final JWTs with tier-based permissions
+- Persist sessions in Redis (with in-memory fallback)
+- Respect `AppConfig.payments` (tiers, address types, confirmations, viewing key mode)
+ - Revoke provisional tokens if verification later fails or sessions expire
+ - Refresh runtime settings from `AppConfig` via `refresh_from_app_config()`
+
+**Dependencies**:
+- `ExternalRpcAdapter` – Verus daemon RPC
+- `PaymentsStore` – Redis-backed session store
+- `TokenIssuerAdapter` – JWT issuance
+- `RevocationStore` – JWT revocation checks (used by authentication)
+
+**Key Methods**:
+```rust
+pub async fn create_quote(&self, req: PaymentQuoteRequest, client: &ClientInfo) -> AppResult<PaymentQuoteResponse>
+pub async fn submit_raw_transaction(&self, req: PaymentSubmitRequest, client: &ClientInfo) -> AppResult<PaymentSubmitResponse>
+pub async fn check_status(&self, payment_id: &str, client: &ClientInfo) -> AppResult<PaymentStatusResponse>
+```
+
 ## RPC Submodules
 
 ### Token Extraction

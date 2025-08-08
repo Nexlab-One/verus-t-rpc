@@ -6,6 +6,7 @@
 pub mod rpc;
 pub mod security;
 pub mod validation;
+pub mod payments;
 
 // Re-export specific types to avoid conflicts
 pub use rpc::{
@@ -20,3 +21,4 @@ pub use validation::{
     DomainValidator, MethodRegistry, RpcMethodDefinition,
     ParameterValidationRule, ValidationConstraint,
 }; 
+pub use payments::{PaymentSession, PaymentStatus, PaymentTier, ShieldedAddressType};

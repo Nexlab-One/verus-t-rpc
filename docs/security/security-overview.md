@@ -125,6 +125,16 @@ pub struct RpcMethod {
 - `z_importviewingkey`: Requires `["write"]` permission
 - `getblock`: Requires `["read"]` permission with hash validation
 
+## 💳 Payments Security
+
+- Viewing-only mode (recommended): Import z-address viewing keys at startup (`z_importviewingkey`); no spending keys on the server. Verification uses `z_viewtransaction`.
+- Hot-wallet mode: If no viewing keys are configured, the server requests new shielded addresses from the daemon. Auto-sweep is intentionally not implemented.
+- Provisional tokens: Issued after `min_confirmations` with reduced permissions/rate (e.g., `provisional`, `rate_multiplier_0.5`).
+ - Provisional tokens: Issued after `min_confirmations` with reduced permissions (`provisional`).
+- Final tokens: Issued at deeper confirmations (≥2 or `min_confirmations`, whichever is higher) with `paid` permission.
+- Revocation: Tokens can be revoked via a Redis-backed revocation store (in-memory fallback). Authentication checks the revocation store on validation.
+ - Revocation: Provisional tokens are revoked if verification later fails or sessions expire. Revocation is stored in Redis when `[cache].enabled=true` (in-memory fallback otherwise), and is enforced by the authentication layer.
+
 ## 🚦 Rate Limiting
 
 ### IP-Based Rate Limiting

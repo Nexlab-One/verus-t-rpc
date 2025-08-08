@@ -8,6 +8,9 @@
 # - GET /metrics/prometheus  - Prometheus exposition format (text/plain)
 # - POST /pool/share         - Mining pool share validation
 # - GET /pool/metrics        - Mining pool metrics
+# - POST /payments/request    - Create a payment quote (z-address + amount)
+# - POST /payments/submit     - Submit signed raw tx for payment
+# - GET  /payments/status/{id}- Check payment status and retrieve JWT
 
 [verus]
 # The URL and port of your Verus daemon RPC endpoint
@@ -136,3 +139,34 @@ redis_url = "redis://127.0.0.1:6379"
 default_ttl = 300
 # Maximum cache size in bytes
 max_size = 104857600
+
+# Payments configuration
+[payments]
+# Enable the payments REST API
+enabled = true
+# Allowed shielded address types (orchard, sapling)
+address_types = ["orchard", "sapling"]
+# Default shielded address type
+default_address_type = "orchard"
+# Confirmations required for provisional token
+min_confirmations = 1
+# Session/quote TTL in minutes
+session_ttl_minutes = 30
+# Require viewing key presence to verify payments
+require_viewing_key = false
+# Optional viewing keys to import at startup (leave empty to skip)
+viewing_keys = []
+# Rescan mode for viewing key import: "yes", "no", or "whenkeyisnew"
+viewing_key_rescan = "whenkeyisnew"
+
+[[payments.tiers]]
+id = "basic"
+amount_vrsc = 1.0
+description = "Basic access"
+permissions = ["read"]
+
+[[payments.tiers]]
+id = "pro"
+amount_vrsc = 5.0
+description = "Pro access"
+permissions = ["read", "write"]

@@ -256,6 +256,47 @@ enable_request_logging = true
 - `rate_limit_requests_per_minute`: Rate limit for token service
 - `enable_request_logging`: Enable request logging for token service
 
+### [payments] - Payments Configuration
+
+```toml
+[payments]
+enabled = true
+address_types = ["orchard", "sapling"]
+default_address_type = "orchard"
+min_confirmations = 1
+session_ttl_minutes = 30
+require_viewing_key = false
+viewing_keys = []
+viewing_key_rescan = "whenkeyisnew"  # "yes", "no", or "whenkeyisnew"
+
+[[payments.tiers]]
+id = "basic"
+amount_vrsc = 1.0
+permissions = ["read"]
+
+[[payments.tiers]]
+id = "pro"
+amount_vrsc = 5.0
+permissions = ["read", "write"]
+```
+
+**Options:**
+- `enabled`: Enable the payments REST API
+- `address_types`: Allowed shielded address types ("orchard", "sapling")
+- `default_address_type`: Default shielded address type
+- `min_confirmations`: Confirmations required before issuing a provisional token
+- `session_ttl_minutes`: Minutes before a quote/session expires
+- `require_viewing_key`: If true, server must have viewing keys and will not create new addresses
+- `viewing_keys`: List of viewing keys to import on startup
+- `viewing_key_rescan`: Rescan policy for viewing key import ("yes", "no", "whenkeyisnew")
+- `tiers`: Payment tiers (id, amount_vrsc, optional description, permissions)
+
+Notes:
+- With `require_viewing_key=true` and empty `viewing_keys`, the server will warn and reject quotes
+- Tokens are provisional at `min_confirmations` and finalized at deeper confirmations (≥2)
+ - When `[cache].enabled = true`, `PaymentsStore` and `RevocationStore` use Redis; otherwise they use in-memory fallbacks
+ - Set `payments.enabled=false` to disable payments endpoints and service behavior
+
 ## Environment-Specific Configurations
 
 ### Development Configuration
