@@ -224,7 +224,7 @@ rust_verusd_rpc_server/
 │   ├── test_local_access.md
 │   └── ...
 ├── examples/                # Example code and scripts
-│   ├── test_secure_deployment.sh
+│   ├── test_deployment.sh
 │   ├── test_project/        # Example Rust client
 │   └── dex_client_example.js
 ├── src/                     # Source code
