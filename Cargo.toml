@@ -2,6 +2,13 @@
 name = "verus-rpc-server"
 version = "0.1.0"
 edition = "2021"
+license = "AGPL-3.0 OR MIT"
+license-file = "LICENSE"
+authors = ["VerusCoin"]
+description = "Rust RPC server for VerusCoin with dual licensing (MIT for VerusCoin, AGPL-3.0 for others)"
+repository = "https://github.com/veruscoin/rust_verusd_rpc_server"
+keywords = ["veruscoin", "rpc", "server", "blockchain"]
+categories = ["network-programming", "web-programming", "cryptocurrency"]
 
 [dependencies]
 # Web framework

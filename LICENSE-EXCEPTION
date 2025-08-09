@@ -1,0 +1,51 @@
+DUAL LICENSING EXCEPTION
+
+This software is dual-licensed under the following terms:
+
+1. MIT LICENSE FOR VERUSCOIN AND NON-COMMERCIAL USE
+   - VerusCoin and its authorized representatives are granted rights under the MIT License
+   - Non-commercial use is also permitted under the MIT License
+   - See LICENSE-VERUS for the complete MIT License terms
+   - This license provides maximum freedom for VerusCoin and non-commercial users
+
+2. AGPL-3.0 LICENSE FOR COMMERCIAL USE
+   - Commercial users, organizations, and entities are subject to the GNU Affero General Public License v3.0
+   - See LICENSE for the complete AGPL-3.0 terms
+   - This license ensures that commercial modifications and network use remain open source
+
+LICENSE DETERMINATION
+
+The applicable license is determined as follows:
+
+- If you are VerusCoin or an authorized representative of VerusCoin, the MIT License (LICENSE-VERUS) applies
+- If you are using the software for non-commercial purposes, the MIT License (LICENSE-VERUS) applies
+- If you are using the software for commercial purposes, the AGPL-3.0 License (LICENSE) applies
+
+To qualify for the MIT License, you must be:
+- VerusCoin (the organization)
+- An authorized representative of VerusCoin
+- Acting on behalf of VerusCoin with proper authorization
+- Using the software for non-commercial purposes
+
+Commercial use includes but is not limited to:
+- Using the software to generate revenue or profit
+- Using the software in a business or commercial organization
+- Using the software to provide commercial services
+- Using the software in a commercial product or service
+- Using the software in a for-profit organization
+
+Non-commercial use includes but is not limited to:
+- Personal use
+- Educational use
+- Research use
+- Open source projects
+- Non-profit organizations
+- Academic institutions
+
+If you are unsure which license applies to your use case, the AGPL-3.0 License applies by default.
+
+CONTACT
+
+For questions about licensing or to request clarification on which license applies to your use case, please contact the copyright holders.
+
+This dual licensing arrangement is designed to provide VerusCoin and non-commercial users with maximum flexibility while ensuring that commercial use benefits from the copyleft protections of the AGPL-3.0 license.

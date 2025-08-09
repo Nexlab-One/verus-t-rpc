@@ -23,12 +23,6 @@ The Rust Verus RPC Server development environment includes:
 - **Linting**: Clippy for code quality
 - **Formatting**: rustfmt for consistent code style
 
-## HTTP Route Tests
-
-- Use in-memory filters via `warp::test::request()`
-- Assert status codes, security headers, and JSON bodies
-- See `src/infrastructure/http/routes/*` tests
-
 ## 🔗 Quick Navigation
 
 - **Getting Started**: See [../getting-started.md](../getting-started.md) for quick setup

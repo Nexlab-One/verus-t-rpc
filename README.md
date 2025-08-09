@@ -1,6 +1,15 @@
 # Rust Verus RPC Server
 
-A  RPC server for Verus blockchain built in Rust. Acts as a secure proxy between clients and the Verus daemon with comprehensive validation and security controls.
+A RPC server for Verus blockchain built in Rust. Acts as a secure proxy between clients and the Verus daemon with comprehensive validation and security controls.
+
+## 📄 License
+
+This project is dual-licensed:
+
+- **MIT License** for VerusCoin and non-commercial use
+- **AGPL-3.0 License** for commercial use
+
+See [LICENSE](LICENSE), [LICENSE-VERUS](LICENSE-VERUS), and [LICENSE-EXCEPTION](LICENSE-EXCEPTION) for details.
 
 > **⚠️ Warning: This project is under active development.**
 >
