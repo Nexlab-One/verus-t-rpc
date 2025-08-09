@@ -5,7 +5,7 @@ This software is dual-licensed under the following terms:
 1. MIT LICENSE FOR VERUSCOIN AND NON-COMMERCIAL USE
    - VerusCoin and its authorized representatives are granted rights under the MIT License
    - Non-commercial use is also permitted under the MIT License
-   - See LICENSE-VERUS for the complete MIT License terms
+   - See LICENSE-MIT for the complete MIT License terms
    - This license provides maximum freedom for VerusCoin and non-commercial users
 
 2. AGPL-3.0 LICENSE FOR COMMERCIAL USE
@@ -17,8 +17,8 @@ LICENSE DETERMINATION
 
 The applicable license is determined as follows:
 
-- If you are VerusCoin or an authorized representative of VerusCoin, the MIT License (LICENSE-VERUS) applies
-- If you are using the software for non-commercial purposes, the MIT License (LICENSE-VERUS) applies
+- If you are VerusCoin or an authorized representative of VerusCoin, the MIT License (LICENSE-MIT) applies
+- If you are using the software for non-commercial purposes, the MIT License (LICENSE-MIT) applies
 - If you are using the software for commercial purposes, the AGPL-3.0 License (LICENSE) applies
 
 To qualify for the MIT License, you must be:
