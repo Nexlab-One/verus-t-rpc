@@ -7,6 +7,7 @@ pub mod rpc;
 pub mod security;
 pub mod validation;
 pub mod payments;
+pub mod health;
 
 // Re-export specific types to avoid conflicts
 pub use rpc::{
@@ -22,3 +23,4 @@ pub use validation::{
     ParameterValidationRule, ValidationConstraint,
 }; 
 pub use payments::{PaymentSession, PaymentStatus, PaymentTier, ShieldedAddressType};
+pub use health::{HealthStatus, HealthResponse};

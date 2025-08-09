@@ -5,19 +5,14 @@
 
 use crate::{
     config::AppConfig,
+    application::use_cases::{ProcessRpcRequestUseCase, GetMetricsUseCase, HealthCheckUseCase},
     infrastructure::http::{
-        routes::MiddlewareConfig,
-        utils::{
-            with_rpc_use_case, with_health_use_case, with_metrics_use_case,
-            with_mining_pool_client, with_config, with_cache_middleware, with_rate_limit_middleware,
-            with_prometheus_adapter,
-        },
         handlers::{
-            handle_rpc_request, handle_health_request, handle_metrics_request,
+            handle_rpc_request, handle_metrics_request,
             handle_prometheus_request, handle_mining_pool_request, handle_pool_metrics_request,
         },
+        utils::{with_health_use_case, with_config, with_metrics_use_case, with_prometheus_adapter, with_mining_pool_client, with_cache_middleware, with_rate_limit_middleware, with_rpc_use_case},
     },
-    application::use_cases::{ProcessRpcRequestUseCase, GetMetricsUseCase, HealthCheckUseCase},
     middleware::{cache::CacheMiddleware, rate_limit::RateLimitMiddleware},
 };
 use std::sync::Arc;
@@ -31,6 +26,7 @@ pub struct FluentRouteBuilder {
     rpc_use_case: Option<Arc<ProcessRpcRequestUseCase>>,
     health_use_case: Option<Arc<HealthCheckUseCase>>,
     metrics_use_case: Option<Arc<GetMetricsUseCase>>,
+    rpc_adapter: Option<Arc<crate::infrastructure::adapters::ExternalRpcAdapter>>,
 }
 
 impl FluentRouteBuilder {
@@ -43,6 +39,7 @@ impl FluentRouteBuilder {
             rpc_use_case: None,
             health_use_case: None,
             metrics_use_case: None,
+            rpc_adapter: None,
         }
     }
 
@@ -82,6 +79,12 @@ impl FluentRouteBuilder {
         self
     }
 
+    /// Add RPC adapter to the builder
+    pub fn with_rpc_adapter(mut self, rpc_adapter: Arc<crate::infrastructure::adapters::ExternalRpcAdapter>) -> Self {
+        self.rpc_adapter = Some(rpc_adapter);
+        self
+    }
+
     /// Build RPC route with fluent API
     pub fn build_rpc_route(&self) -> Result<impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone, String> {
         let rpc_use_case = self.rpc_use_case.as_ref()
@@ -112,11 +115,18 @@ impl FluentRouteBuilder {
         let health_use_case = self.health_use_case.as_ref()
             .ok_or("Health use case is required for health route")?;
 
+        let rpc_adapter = self.rpc_adapter.clone();
+
         let route = warp::path("health")
             .and(warp::get())
             .and(with_health_use_case(health_use_case.clone()))
             .and(with_config(self.config.clone()))
-            .and_then(handle_health_request);
+            .and_then(move |health_use_case, _config| {
+                let rpc_adapter = rpc_adapter.clone();
+                async move {
+                    handle_enhanced_health_check(health_use_case, rpc_adapter).await
+                }
+            });
 
         Ok(route)
     }
@@ -227,6 +237,34 @@ impl FluentRouteBuilder {
     }
 }
 
+/// Enhanced health check handler with circuit breaker monitoring
+async fn handle_enhanced_health_check(
+    health_use_case: Arc<HealthCheckUseCase>,
+    rpc_adapter: Option<Arc<crate::infrastructure::adapters::ExternalRpcAdapter>>,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    // Use the enhanced health check with circuit breaker monitoring
+    match health_use_case.execute(rpc_adapter).await {
+        Ok(response) => {
+            let status_code = response.http_status_code();
+            Ok(warp::reply::with_status(
+                warp::reply::json(&response),
+                warp::http::StatusCode::from_u16(status_code).unwrap_or(warp::http::StatusCode::OK),
+            ))
+        }
+        Err(_) => {
+            // Return a simple error response instead of rejecting
+            let error_response = serde_json::json!({
+                "error": "Health check failed",
+                "status": "unhealthy"
+            });
+            Ok(warp::reply::with_status(
+                warp::reply::json(&error_response),
+                warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+            ))
+        }
+    }
+}
+
 /// Convenience functions for common route building patterns
 pub struct FluentRouteUtils;
 
@@ -239,6 +277,7 @@ impl FluentRouteUtils {
         metrics_use_case: Arc<GetMetricsUseCase>,
         cache_middleware: Arc<CacheMiddleware>,
         rate_limit_middleware: Arc<RateLimitMiddleware>,
+        rpc_adapter: Arc<crate::infrastructure::adapters::ExternalRpcAdapter>,
     ) -> FluentRouteBuilder {
         FluentRouteBuilder::new()
             .with_config(config)
@@ -247,6 +286,7 @@ impl FluentRouteUtils {
             .with_metrics_use_case(metrics_use_case)
             .with_cache_middleware(cache_middleware)
             .with_rate_limit_middleware(rate_limit_middleware)
+            .with_rpc_adapter(rpc_adapter)
     }
 
     /// Create a minimal route builder for basic routes
@@ -263,7 +303,7 @@ impl FluentRouteUtils {
 
     /// Create a route builder from middleware configuration
     pub fn from_middleware_config(
-        middleware_config: MiddlewareConfig,
+        middleware_config: crate::infrastructure::http::routes::MiddlewareConfig,
         rpc_use_case: Option<Arc<ProcessRpcRequestUseCase>>,
         health_use_case: Option<Arc<HealthCheckUseCase>>,
         metrics_use_case: Option<Arc<GetMetricsUseCase>>,
@@ -340,6 +380,7 @@ mod tests {
         let health_use_case = create_test_health_use_case();
         let cache_middleware = create_test_cache_middleware().await;
         let rate_limit_middleware = create_test_rate_limit_middleware();
+        let rpc_adapter = Arc::new(crate::infrastructure::adapters::ExternalRpcAdapter::new(Arc::new(config.clone())));
 
         // This should not panic and should return a valid filter
         let routes = FluentRouteBuilder::new()
@@ -349,6 +390,7 @@ mod tests {
             .with_health_use_case(health_use_case)
             .with_cache_middleware(cache_middleware)
             .with_rate_limit_middleware(rate_limit_middleware)
+            .with_rpc_adapter(rpc_adapter)
             .build();
         assert!(routes.is_ok());
     }
@@ -378,6 +420,7 @@ mod tests {
         let health_use_case = create_test_health_use_case();
         let cache_middleware = create_test_cache_middleware().await;
         let rate_limit_middleware = create_test_rate_limit_middleware();
+        let rpc_adapter = Arc::new(crate::infrastructure::adapters::ExternalRpcAdapter::new(Arc::new(config.clone())));
 
         // Test building with all components
         let routes = FluentRouteBuilder::new()
@@ -387,6 +430,7 @@ mod tests {
             .with_health_use_case(health_use_case)
             .with_cache_middleware(cache_middleware)
             .with_rate_limit_middleware(rate_limit_middleware)
+            .with_rpc_adapter(rpc_adapter)
             .build();
         assert!(routes.is_ok());
     }

@@ -5,6 +5,7 @@
 use crate::{
     config::AppConfig,
     application::use_cases::HealthCheckUseCase,
+    infrastructure::adapters::ExternalRpcAdapter,
     middleware::security_headers::{SecurityHeadersMiddleware, create_json_response_with_security_headers},
 };
 use std::sync::Arc;
@@ -14,12 +15,14 @@ use warp::{Reply};
 pub async fn handle_health_request(
     health_use_case: Arc<HealthCheckUseCase>,
     config: AppConfig,
+    rpc_adapter: Option<Arc<ExternalRpcAdapter>>,
 ) -> Result<impl Reply, warp::reject::Rejection> {
-    let health_data = health_use_case.execute();
+    let health_response = health_use_case.execute(rpc_adapter).await
+        .map_err(|_| warp::reject::not_found())?;
     
     // Apply security headers only
     let response = create_json_response_with_security_headers(
-        &health_data,
+        &health_response,
         &SecurityHeadersMiddleware::new(config.clone()),
     );
     
@@ -43,7 +46,7 @@ mod tests {
         let health_use_case = create_test_health_use_case();
         let config = create_test_config();
 
-        let result = handle_health_request(health_use_case, config).await;
+        let result = handle_health_request(health_use_case, config, None).await;
         
         assert!(result.is_ok());
     }
@@ -57,7 +60,7 @@ mod tests {
         config.server.port = 8081;
         config.server.bind_address = "127.0.0.1".parse().unwrap();
 
-        let result = handle_health_request(health_use_case, config).await;
+        let result = handle_health_request(health_use_case, config, None).await;
         
         assert!(result.is_ok());
     }
@@ -67,7 +70,7 @@ mod tests {
         let health_use_case = create_test_health_use_case();
         let config = create_test_config();
 
-        let result = handle_health_request(health_use_case, config).await;
+        let result = handle_health_request(health_use_case, config, None).await;
         
         assert!(result.is_ok());
     }
@@ -76,17 +79,16 @@ mod tests {
     async fn test_health_use_case_execute() {
         let health_use_case = create_test_health_use_case();
         
-        let health_data = health_use_case.execute();
+        let health_response = health_use_case.execute(None).await.unwrap();
         
-        // Verify health data structure
-        assert!(health_data.is_object());
+        // Verify health response structure
+        assert_eq!(health_response.status.to_string(), "degraded"); // Should be degraded without RPC adapter
+        assert!(health_response.details.is_object());
         
-        let health_obj = health_data.as_object().unwrap();
-        assert!(health_obj.contains_key("status"));
-        assert!(health_obj.contains_key("timestamp"));
-        assert!(health_obj.contains_key("version"));
-        
-        assert_eq!(health_obj.get("status").unwrap(), "healthy");
+        let details_obj = health_response.details.as_object().unwrap();
+        assert!(details_obj.contains_key("timestamp"));
+        assert!(details_obj.contains_key("version"));
+        assert!(details_obj.contains_key("daemon"));
     }
 
     #[tokio::test]
@@ -97,7 +99,7 @@ mod tests {
         // Disable security headers
         config.security.enable_security_headers = false;
 
-        let result = handle_health_request(health_use_case, config).await;
+        let result = handle_health_request(health_use_case, config, None).await;
         
         assert!(result.is_ok());
     }

@@ -1,0 +1,53 @@
+# Development Caddyfile for Verus RPC Server
+# Simplified configuration for development
+
+:80 {
+    # Rate limiting (relaxed for development)
+    rate_limit {
+        zone api
+        events 2000
+        window 1m
+    }
+    
+    # Security headers
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy strict-origin-when-cross-origin
+        -Server
+        Cache-Control "no-cache, no-store, must-revalidate"
+    }
+    
+    # Gzip compression
+    encode gzip
+    
+    # Reverse proxy to development server
+    reverse_proxy verus-rpc-server-dev:8080 {
+        health_uri /health
+        health_interval 30s
+        health_timeout 10s
+        timeout 30s
+        
+        # Headers
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+    
+    # Logging
+    log {
+        output stdout
+        format console
+        level DEBUG
+    }
+}
+
+# Token service endpoint
+:8081 {
+    reverse_proxy token-service-dev:8081 {
+        health_uri /health
+        health_interval 30s
+        health_timeout 10s
+    }
+}

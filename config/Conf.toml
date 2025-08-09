@@ -1,0 +1,69 @@
+# Verus RPC Server Configuration for Docker (Testnet)
+# This file is used by the application (expects "Conf.toml")
+
+[verus]
+rpc_url = "http://localhost:27486"
+rpc_user = "verus_rpc_user"
+rpc_password = "verus_rpc_password"
+timeout_seconds = 30
+max_retries = 3
+
+# Circuit breaker configuration for daemon connectivity
+[verus.circuit_breaker]
+failure_threshold = 5
+recovery_timeout_seconds = 60
+half_open_max_requests = 3
+
+[server]
+bind_address = "0.0.0.0"
+port = 8080
+max_request_size = 1048576
+worker_threads = 8
+
+[security]
+development_mode = false
+enable_security_headers = true
+enable_custom_headers = true
+cors_origins = ["*"]
+cors_methods = ["GET", "POST"]
+cors_headers = ["Content-Type", "Authorization"]
+enable_request_logging = true
+trusted_proxy_headers = ["X-Forwarded-For"]
+custom_security_header = ""
+method_rate_limits = {}
+
+[security.jwt]
+secret_key = "prod-secret-key-32-chars-long-12345"
+expiration_seconds = 3600
+issuer = "verus-rpc-server"
+audience = "verus-clients"
+
+[rate_limit]
+enabled = true
+requests_per_minute = 1000
+burst_size = 100
+
+[cache]
+enabled = true
+redis_url = "redis://redis-test:6379"
+default_ttl = 300
+max_size = 104857600
+
+[logging]
+level = "info"
+format = "json"
+structured = true
+
+[payments]
+enabled = true
+address_types = ["orchard", "sapling"]
+default_address_type = "orchard"
+min_confirmations = 1
+session_ttl_minutes = 30
+require_viewing_key = false
+viewing_keys = []
+viewing_key_rescan = "whenkeyisnew"
+tiers = [
+    { id = "basic", amount_vrsc = 1.0, description = "Basic access", permissions = ["read"] },
+    { id = "pro", amount_vrsc = 5.0, description = "Pro access", permissions = ["read", "write"] }
+]

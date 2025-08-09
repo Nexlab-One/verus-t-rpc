@@ -1,0 +1,125 @@
+version: '3.8'
+
+services:
+  # Development RPC Server
+  verus-rpc-server-dev:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.dev
+      args:
+        - RUST_VERSION=1.70
+    container_name: verus-rpc-server-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount source code for live development
+      - ../..:/app:rw
+      - cargo-cache:/usr/local/cargo/registry
+    # user: "1000:1000"  # Temporarily disabled for development
+    environment:
+      - RUST_LOG=debug
+      - RUST_BACKTRACE=1
+      - VERUS_RPC__SECURITY__DEVELOPMENT_MODE=true
+      - VERUS_RPC__SECURITY__ENABLE_SECURITY_HEADERS=true
+    depends_on:
+      - redis-dev
+    networks:
+      - verus-dev-network
+    command: ["cargo", "run", "--bin", "verus-rpc-server", "--", "--config", "config/development.toml"]
+
+  # Development Token Service
+  token-service-dev:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.dev
+    container_name: verus-token-service-dev
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    volumes:
+      - ../..:/app:rw
+      - cargo-cache:/usr/local/cargo/registry
+    # user: "1000:1000"  # Temporarily disabled for development
+    environment:
+      - RUST_LOG=debug
+      - RUST_BACKTRACE=1
+      - TOKEN_SERVICE_PORT=8081
+    depends_on:
+      - redis-dev
+    networks:
+      - verus-dev-network
+    command: ["cargo", "run", "--bin", "token-service", "--", "--config", "config/development.toml"]
+
+  # Development Redis
+  redis-dev:
+    image: redis:7-alpine
+    container_name: verus-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-dev-data:/data
+    networks:
+      - verus-dev-network
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Development Verus Daemon (commented out for testing)
+  # verus-daemon-dev:
+  #   image: verus/verus:latest
+  #   container_name: verus-daemon-dev
+  #   restart: unless-stopped
+  #   ports:
+  #     - "27486:27486"
+  #   volumes:
+  #     - verus-dev-data:/root/.verus
+  #     - ../../docker/config/verus.conf:/root/.verus/verus.conf:ro
+  #   networks:
+  #     - verus-dev-network
+  #   command: verusd -conf=/root/.verus/verus.conf
+  #   healthcheck:
+  #     test: ["CMD", "verus-cli", "-conf=/root/.verus/verus.conf", "getinfo"]
+  #     interval: 60s
+  #     timeout: 30s
+  #     retries: 3
+  #     start_period: 120s
+
+  # Development Caddy (optional)
+  caddy-dev:
+    image: caddy:2-alpine
+    container_name: verus-caddy-dev
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../../docker/config/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      - caddy-dev-data:/data
+      - caddy-dev-config:/config
+    depends_on:
+      - verus-rpc-server-dev
+    networks:
+      - verus-dev-network
+
+volumes:
+  cargo-cache:
+    driver: local
+  target-cache:
+    driver: local
+  redis-dev-data:
+    driver: local
+  verus-dev-data:
+    driver: local
+  caddy-dev-data:
+    driver: local
+  caddy-dev-config:
+    driver: local
+
+networks:
+  verus-dev-network:
+    driver: bridge

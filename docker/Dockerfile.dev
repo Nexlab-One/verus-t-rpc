@@ -1,0 +1,44 @@
+# Development Dockerfile for cross-platform development
+# Optimized for live code reloading and debugging
+FROM rust:latest
+
+# Install development dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Install development tools (with version pinning for compatibility)
+RUN cargo install cargo-watch@8.4.0 cargo-audit@0.21.1 cargo-expand@1.0.95
+
+# Create non-root user for development
+RUN groupadd -r verus && useradd -r -g verus -s /bin/bash verus
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files
+COPY Cargo.toml ./
+COPY Cargo.lock ./
+
+# Create dummy files to build dependencies
+RUN mkdir -p src/bin && echo "fn main() {}" > src/main.rs && echo "fn main() {}" > src/bin/token_service.rs
+RUN cargo build
+
+# Copy source code
+COPY src ./src
+
+# Build the application (only the main binary for development)
+RUN cargo build --bin verus-rpc-server
+
+# Switch to non-root user
+USER verus
+
+# Expose ports
+EXPOSE 8080 8081
+
+# Default command for development
+CMD ["cargo", "run", "--", "--config", "config/development.toml"]

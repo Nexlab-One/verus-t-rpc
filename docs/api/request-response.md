@@ -121,18 +121,58 @@ curl -X POST http://127.0.0.1:8080/ \
 
 ### GET /health
 
-Request:
+Returns the current health status of the service with enhanced circuit breaker monitoring.
+
+**Request:**
 ```bash
 curl http://127.0.0.1:8080/health
 ```
 
-Response:
+**Response (Healthy):**
 ```json
 {
   "status": "healthy",
-  "timestamp": "2024-12-06T15:30:00Z",
-  "version": "1.0.0",
-  "uptime_seconds": 3600
+  "details": {
+    "timestamp": "2024-12-06T15:30:00Z",
+    "version": "1.0.0",
+    "uptime": "2d 5h 30m",
+    "daemon": {
+      "available": true,
+      "circuit_breaker": "Closed",
+      "status": "connected"
+    },
+    "system": {
+      "memory_usage": "N/A",
+      "cpu_usage": "N/A",
+      "active_connections": 0
+    }
+  }
+}
+```
+
+**Response (Degraded):**
+```json
+{
+  "status": "degraded",
+  "details": {
+    "timestamp": "2024-12-06T15:30:00Z",
+    "version": "1.0.0",
+    "uptime": "2d 5h 30m",
+    "daemon": {
+      "available": false,
+      "circuit_breaker": "Open",
+      "status": "disconnected"
+    },
+    "warnings": [
+      "Verus daemon is currently unavailable",
+      "RPC requests may fail or be delayed"
+    ],
+    "system": {
+      "memory_usage": "N/A",
+      "cpu_usage": "N/A",
+      "active_connections": 0
+    }
+  }
 }
 ```
 
@@ -170,6 +210,45 @@ Response (example):
 # HELP verus_rpc_requests_total Total number of RPC requests
 # TYPE verus_rpc_requests_total counter
 verus_rpc_requests_total{method="getinfo"} 42
+```
+
+## Circuit Breaker Admin Endpoints
+
+### GET /admin/circuit-breaker/status
+
+Returns the current circuit breaker status.
+
+**Request:**
+```bash
+curl http://127.0.0.1:8080/admin/circuit-breaker/status
+```
+
+**Response:**
+```json
+{
+  "circuit_breaker": {
+    "status": "Closed",
+    "available": true,
+    "timestamp": "2024-12-06T15:30:00Z"
+  }
+}
+```
+
+### POST /admin/circuit-breaker/reset
+
+Manually resets the circuit breaker (admin only).
+
+**Request:**
+```bash
+curl -X POST http://127.0.0.1:8080/admin/circuit-breaker/reset
+```
+
+**Response:**
+```json
+{
+  "message": "Circuit breaker reset successfully",
+    "timestamp": "2024-12-06T15:30:00Z"
+}
 ```
 
 ## Rate Limiting

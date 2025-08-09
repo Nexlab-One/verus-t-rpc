@@ -150,7 +150,7 @@ impl HttpServer {
         let payments_service = std::sync::Arc::new(crate::application::services::payments_service::PaymentsService::new(
             std::sync::Arc::new(self.config.clone()),
             payments_config,
-            external_rpc,
+            external_rpc.clone(),
             payments_store,
             token_issuer,
             self.revocation_store.clone(),

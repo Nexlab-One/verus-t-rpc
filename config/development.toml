@@ -1,0 +1,48 @@
+[verus]
+rpc_url = "http://localhost:27486"
+rpc_user = "verus_rpc_user"
+rpc_password = "verus_rpc_password"
+timeout_seconds = 30
+max_retries = 3
+
+# Circuit breaker configuration for daemon connectivity
+[verus.circuit_breaker]
+failure_threshold = 5
+recovery_timeout_seconds = 60
+half_open_max_requests = 3
+
+[server]
+bind_address = "0.0.0.0"
+port = 8080
+max_request_size = 1048576
+worker_threads = 2
+
+[security]
+development_mode = true
+enable_security_headers = true
+enable_custom_headers = false
+cors_origins = ["*"]
+cors_methods = ["GET", "POST"]
+cors_headers = ["Content-Type", "Authorization"]
+
+[jwt]
+secret_key = "dev-secret-key-32-chars-long-12345"
+expiration_seconds = 3600
+issuer = "verus-rpc-server-dev"
+audience = "verus-clients-dev"
+
+[rate_limit]
+enabled = true
+requests_per_minute = 1000
+burst_size = 100
+
+[cache]
+enabled = true
+redis_url = "redis://redis-dev:6379"
+default_ttl = 300
+max_size = 104857600
+
+[logging]
+level = "debug"
+format = "json"
+structured = true

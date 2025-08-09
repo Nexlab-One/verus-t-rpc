@@ -6,6 +6,32 @@ use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
 use validator::Validate;
 
+/// Circuit breaker configuration for daemon connectivity
+#[derive(Debug, Clone, Serialize, Deserialize, Validate)]
+pub struct CircuitBreakerConfig {
+    /// Number of failures before opening the circuit
+    #[validate(range(min = 1, max = 100))]
+    pub failure_threshold: u32,
+    
+    /// Time to wait before testing recovery (seconds)
+    #[validate(range(min = 1, max = 3600))]
+    pub recovery_timeout_seconds: u64,
+    
+    /// Maximum requests allowed in half-open state
+    #[validate(range(min = 1, max = 50))]
+    pub half_open_max_requests: u32,
+}
+
+impl Default for CircuitBreakerConfig {
+    fn default() -> Self {
+        Self {
+            failure_threshold: 5,
+            recovery_timeout_seconds: 60,
+            half_open_max_requests: 3,
+        }
+    }
+}
+
 /// Verus daemon configuration
 #[derive(Debug, Clone, Serialize, Deserialize, Validate)]
 pub struct VerusConfig {
@@ -28,6 +54,9 @@ pub struct VerusConfig {
     /// Maximum retry attempts
     #[validate(range(min = 0, max = 10))]
     pub max_retries: u32,
+    
+    /// Circuit breaker configuration
+    pub circuit_breaker: Option<CircuitBreakerConfig>,
 }
 
 /// Server configuration
@@ -321,6 +350,7 @@ impl Default for AppConfig {
                 rpc_password: "rpcpassword".to_string(),
                 timeout_seconds: 30,
                 max_retries: 3,
+                circuit_breaker: Some(CircuitBreakerConfig::default()),
             },
             server: ServerConfig {
                 bind_address: "127.0.0.1".parse().unwrap(),

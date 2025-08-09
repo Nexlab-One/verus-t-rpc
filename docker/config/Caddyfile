@@ -1,0 +1,83 @@
+# Production Caddyfile for Verus RPC Server
+# Automatic HTTPS with Let's Encrypt
+
+yourdomain.com {
+    # Automatic HTTPS with Let's Encrypt
+    tls your-email@domain.com
+    
+    # Rate limiting
+    rate_limit {
+        zone api
+        events 1000
+        window 1m
+    }
+    
+    # Security headers
+    header {
+        # Security headers
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy strict-origin-when-cross-origin
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        
+        # Remove server header
+        -Server
+        
+        # Cache control for API responses
+        Cache-Control "no-cache, no-store, must-revalidate"
+        Pragma "no-cache"
+        Expires "0"
+    }
+    
+    # Gzip compression
+    encode gzip
+    
+    # Reverse proxy to Verus RPC Server
+    reverse_proxy verus-rpc-server:8080 {
+        # Health checks
+        health_uri /health
+        health_interval 30s
+        health_timeout 10s
+        
+        # Load balancing (if multiple instances)
+        lb_policy round_robin
+        
+        # Timeouts
+        timeout 30s
+        
+        # Headers
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+    
+    # Logging
+    log {
+        output file /var/log/caddy/verus-rpc.log
+        format json
+        level INFO
+    }
+}
+
+# Health check endpoint (internal only)
+:8081 {
+    bind 127.0.0.1
+    
+    reverse_proxy verus-rpc-server:8080 {
+        health_uri /health
+        health_interval 30s
+        health_timeout 10s
+    }
+}
+
+# Metrics endpoint (internal only)
+:8082 {
+    bind 127.0.0.1
+    
+    reverse_proxy verus-rpc-server:8080 {
+        health_uri /metrics
+        health_interval 30s
+        health_timeout 10s
+    }
+}

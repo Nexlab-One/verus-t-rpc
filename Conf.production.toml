@@ -24,6 +24,12 @@ timeout_seconds = 30
 # Maximum retry attempts
 max_retries = 3
 
+# Circuit breaker configuration for daemon connectivity
+[verus.circuit_breaker]
+failure_threshold = 5
+recovery_timeout_seconds = 60
+half_open_max_requests = 3
+
 [server]
 # Server address to bind to (0.0.0.0 for all interfaces)
 bind_address = "0.0.0.0"

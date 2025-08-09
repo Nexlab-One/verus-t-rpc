@@ -13,7 +13,8 @@ The Rust Verus RPC Server provides monitoring capabilities:
 
 - **Prometheus Metrics**: Detailed performance and business metrics
 - **Structured Logging**: JSON-formatted logs with correlation IDs
-- **Health Checks**: `/health` endpoint for service health monitoring
+- **Enhanced Health Checks**: `/health` endpoint with circuit breaker monitoring and degraded status support
+- **Circuit Breaker Admin**: `/admin/circuit-breaker/*` endpoints for monitoring and control
 - **Performance Monitoring**: Request latency, throughput, and error rates
 - **Business Metrics**: RPC method usage, authentication events, cache hit rates
 

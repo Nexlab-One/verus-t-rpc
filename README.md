@@ -112,7 +112,8 @@ curl -X POST http://127.0.0.1:8080/ \
 
 ## 📊 Monitoring
 
-- **Health Check**: `/health`
+- **Health Check**: `/health` (with circuit breaker monitoring)
+- **Circuit Breaker Admin**: `/admin/circuit-breaker/status`, `/admin/circuit-breaker/reset`
 - **Metrics**: `/metrics` (Prometheus format)
 - **Structured Logging**: JSON format with request/response tracking
 

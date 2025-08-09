@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Verus Daemon Test
+  verus-daemon-test:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.verus
+    container_name: verus-daemon-test
+    restart: unless-stopped
+    ports:
+      - "27486:27486"  # Expose for testing
+    volumes:
+      - verus-test-data:/home/verus/.komodo/VRSC
+      - ../../docker/config/verus.conf:/home/verus/.komodo/VRSC/verus.conf:ro
+    networks:
+      - verus-test-network
+    environment:
+      - VERUS_DATA_DIR=/home/verus/.komodo/VRSC
+    healthcheck:
+      test: ["CMD", "verus", "-conf=/home/verus/.komodo/VRSC/verus.conf", "getinfo"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 300s
+
+  # RPC Server Test (with Verus integration)
+  verus-rpc-server-test:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    container_name: verus-rpc-server-test
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../../config:/app/config:ro
+    environment:
+      - RUST_LOG=info
+      - RUST_BACKTRACE=0
+      - DEVELOPMENT_MODE=false
+      - ENABLE_SECURITY_HEADERS=true
+      - VERUS_HOST=verus-daemon-test
+      - VERUS_PORT=27486
+      - VERUS_USER=verus_rpc_user
+      - VERUS_PASSWORD=verus_rpc_password
+    depends_on:
+      - verus-daemon-test
+    networks:
+      - verus-test-network
+    command: ["sh", "-c", "wait-for-verus.sh && cp /app/config/Conf.toml . && verus-rpc-server"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-H", "User-Agent: Docker-Health-Check", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis Cache
+  redis-test:
+    image: redis:7-alpine
+    container_name: verus-redis-test
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - verus-test-network
+    command: redis-server --bind 0.0.0.0 --protected-mode yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  verus-test-data:
+    driver: local
+
+networks:
+  verus-test-network:
+    driver: bridge

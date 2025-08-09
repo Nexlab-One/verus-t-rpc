@@ -141,7 +141,7 @@ verus_rpc_redis_response_time_seconds 0.001
 
 ### Health Check Endpoint
 
-The server provides a health check endpoint at `/health`:
+The server provides an enhanced health check endpoint at `/health` with circuit breaker monitoring:
 
 ```bash
 curl http://127.0.0.1:8080/health
@@ -151,59 +151,139 @@ curl http://127.0.0.1:8080/health
 ```json
 {
   "status": "healthy",
-  "timestamp": "2024-12-06T15:30:00Z",
-  "version": "1.0.0",
-  "uptime_seconds": 3600,
-  "checks": {
-    "verus_daemon": "healthy",
-    "redis": "healthy",
-    "memory": "healthy",
-    "disk": "healthy"
+  "details": {
+    "timestamp": "2024-12-06T15:30:00Z",
+    "version": "1.0.0",
+    "uptime": "2d 5h 30m",
+    "daemon": {
+      "available": true,
+      "circuit_breaker": "Closed",
+      "status": "connected"
+    },
+    "system": {
+      "memory_usage": "N/A",
+      "cpu_usage": "N/A",
+      "active_connections": 0
+    }
+  }
+}
+```
+
+**Degraded Status Example:**
+```json
+{
+  "status": "degraded",
+  "details": {
+    "timestamp": "2024-12-06T15:30:00Z",
+    "version": "1.0.0",
+    "uptime": "2d 5h 30m",
+    "daemon": {
+      "available": false,
+      "circuit_breaker": "Open",
+      "status": "disconnected"
+    },
+    "warnings": [
+      "Verus daemon is currently unavailable",
+      "RPC requests may fail or be delayed"
+    ],
+    "system": {
+      "memory_usage": "N/A",
+      "cpu_usage": "N/A",
+      "active_connections": 0
+    }
   }
 }
 ```
 
 ### Health Check Components
 
-#### Verus Daemon Health
+#### Daemon Health with Circuit Breaker
 
 ```rust
-// Check Verus daemon connectivity
-async fn check_verus_daemon() -> HealthStatus {
-    match rpc_adapter.call_method("getinfo", &[]).await {
-        Ok(_) => HealthStatus::Healthy,
-        Err(_) => HealthStatus::Unhealthy,
-    }
-}
-```
-
-#### Redis Health
-
-```rust
-// Check Redis connectivity
-async fn check_redis() -> HealthStatus {
-    match cache_adapter.ping().await {
-        Ok(_) => HealthStatus::Healthy,
-        Err(_) => HealthStatus::Unhealthy,
-    }
-}
-```
-
-#### System Health
-
-```rust
-// Check system resources
-fn check_system_health() -> HealthStatus {
-    let memory_usage = get_memory_usage();
-    let disk_usage = get_disk_usage();
+// Check daemon connectivity with circuit breaker status
+if let Some(adapter) = rpc_adapter {
+    let daemon_available = adapter.is_available().await;
+    let circuit_status = adapter.get_circuit_status().await;
     
-    if memory_usage > 90.0 || disk_usage > 95.0 {
-        HealthStatus::Unhealthy
-    } else {
-        HealthStatus::Healthy
+    details["daemon"] = json!({
+        "available": daemon_available,
+        "circuit_breaker": format!("{:?}", circuit_status),
+        "status": if daemon_available { "connected" } else { "disconnected" }
+    });
+
+    if !daemon_available {
+        status = HealthStatus::Degraded;
+        details["warnings"] = json!([
+            "Verus daemon is currently unavailable",
+            "RPC requests may fail or be delayed"
+        ]);
     }
 }
 ```
+
+#### Health Status Types
+
+The health check now supports three status levels:
+
+- **Healthy**: Service is fully operational
+- **Degraded**: Service is partially available (daemon down, circuit breaker open)
+- **Unhealthy**: Service is completely unavailable
+
+#### System Metrics Integration
+
+```rust
+// Add system metrics to health check
+details["system"] = json!({
+    "memory_usage": self.get_memory_usage(),
+    "cpu_usage": self.get_cpu_usage(),
+    "active_connections": self.get_active_connections(),
+});
+```
+
+## 🔧 Circuit Breaker Admin Endpoints
+
+### Circuit Breaker Status
+
+Check the current circuit breaker status:
+
+```bash
+curl http://127.0.0.1:8080/admin/circuit-breaker/status
+```
+
+**Response:**
+```json
+{
+  "circuit_breaker": {
+    "status": "Closed",
+    "available": true,
+    "timestamp": "2024-12-06T15:30:00Z"
+  }
+}
+```
+
+### Circuit Breaker Reset
+
+Manually reset the circuit breaker (admin only):
+
+```bash
+curl -X POST http://127.0.0.1:8080/admin/circuit-breaker/reset
+```
+
+**Response:**
+```json
+{
+  "message": "Circuit breaker reset successfully",
+  "timestamp": "2024-12-06T15:30:00Z"
+}
+```
+
+### Circuit Breaker States
+
+The circuit breaker operates in three states:
+
+- **Closed**: Normal operation, requests are allowed
+- **Open**: Circuit is open, requests fail fast
+- **Half-Open**: Testing if service has recovered
 
 ## 📈 Prometheus Integration
 

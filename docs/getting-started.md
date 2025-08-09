@@ -98,8 +98,21 @@ Expected response:
 ```json
 {
   "status": "healthy",
-  "timestamp": "2024-12-06T15:30:00Z",
-  "version": "1.0.0"
+  "details": {
+    "timestamp": "2024-12-06T15:30:00Z",
+    "version": "1.0.0",
+    "uptime": "0d 0h 5m",
+    "daemon": {
+      "available": true,
+      "circuit_breaker": "Closed",
+      "status": "connected"
+    },
+    "system": {
+      "memory_usage": "N/A",
+      "cpu_usage": "N/A",
+      "active_connections": 0
+    }
+  }
 }
 ```
 

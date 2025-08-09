@@ -82,6 +82,28 @@ curl -X POST http://127.0.0.1:8080 \
 curl http://127.0.0.1:8080/health
 ```
 
+Expected response:
+```json
+{
+  "status": "healthy",
+  "details": {
+    "timestamp": "2024-12-06T15:30:00Z",
+    "version": "1.0.0",
+    "uptime": "0d 0h 5m",
+    "daemon": {
+      "available": true,
+      "circuit_breaker": "Closed",
+      "status": "connected"
+    },
+    "system": {
+      "memory_usage": "N/A",
+      "cpu_usage": "N/A",
+      "active_connections": 0
+    }
+  }
+}
+```
+
 ### 4. Test Metrics
 
 ```bash
